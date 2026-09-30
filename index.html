@@ -2047,26 +2047,6 @@ async function uploadImageToSupabase(file) {
                 btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Vendor Catering`; btn.disabled = false;
             }
         }
-
-                const { error } = await supabaseApp.from('vendor_catering').insert([payload]);
-                if (error) throw error;
-
-                showToast('Data Vendor Catering/Konsumsi berhasil disimpan!', 'success');
-                e.target.reset();
-                for(let i=1; i<=konsumsiSlotCount; i++) {
-                    const nameEl = document.getElementById(`name-konsumsi-img-${i}`);
-                    if(nameEl) { nameEl.innerText = `Gambar ${i}`; nameEl.classList.remove('text-aw-blue', 'font-bold'); }
-                }
-                
-                await fetchMasterData(); // Segarkan data
-                renderCateringCatalog(); // Update UI Katalog
-            } catch (err) {
-                console.error(err);
-                showToast("Gagal menyimpan data Catering.", "error");
-            } finally {
-                btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Vendor Catering`; btn.disabled = false;
-            }
-        }
         function getNeedsBadgesHtml(needsArray) {
             if(!needsArray || needsArray.length === 0) return '';
             let html = '';
