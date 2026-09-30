@@ -1343,7 +1343,7 @@ const supabaseApp = createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false }
 });
 
-/ Fungsi pembantu untuk upload file ke Bucket 'gambar'
+// Fungsi pembantu untuk upload file ke Bucket 'gambar'
 async function uploadImageToSupabase(file) {
     if (!file) return null;
     // Bikin nama file unik pakai timestamp biar nggak bentrok
