@@ -1151,10 +1151,10 @@
 
                         <form onsubmit="submitDBBus(event)" class="space-y-5">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Nama Vendor Bus</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: PO. Haryanto / Big Bird" required></div>
-                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Contact Person</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Nama PIC / No HP WA" required></div>
+                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Nama Vendor Bus</label><input type="text" id="inp-bus-name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: PO. Haryanto / Big Bird" required></div>
+                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Contact Person</label><input type="text" id="inp-bus-cp" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Nama PIC / No HP WA" required></div>
                             </div>
-                            <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Estimasi Harga Sewa (Per Hari)</label><input type="text" class="w-full md:w-1/2 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: Rp 2.500.000 - Rp 3.000.000" required></div>
+                            <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Estimasi Harga Sewa (Angka Saja)</label><input type="number" id="inp-bus-price" class="w-full md:w-1/2 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: 2500000" required></div>
                             <div class="pt-4 border-t border-slate-200 mt-2">
                                 <button type="submit" id="btn-submit-bus" class="bg-aw-green hover:bg-emerald-600 text-white font-bold py-3 px-6 rounded-xl shadow-md transition flex items-center gap-2"><i class="fa-solid fa-save"></i> Simpan Vendor Bus</button>
                             </div>
@@ -1169,9 +1169,9 @@
                         <p class="text-slate-500 text-sm font-medium">Kelola vendor makanan/catering yang terhubung dengan lokasi tertentu atau bebas.</p>
                     </div>
                     <div class="glass-card p-6 md:p-8">
-                        <form onsubmit="submitDBKonsumsi(event)" class="space-y-5">
+                       <form onsubmit="submitDBKonsumsi(event)" class="space-y-5">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Nama Vendor Catering</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: Catering Ibu Siti / McD" required></div>
+                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Nama Vendor Catering</label><input type="text" id="inp-cat-name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: Catering Ibu Siti / McD" required></div>
                                 <div>
                                     <label class="block text-xs font-bold text-aw-blue uppercase mb-2 pl-1">Lokasi Terkait (Opsional)</label>
                                     <select id="inp-konsumsi-lokasi" class="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl outline-none font-bold text-aw-blue cursor-pointer">
@@ -1181,10 +1181,9 @@
                                 </div>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Estimasi Harga (Per Pax)</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: Rp 25.000 - Rp 50.000" required></div>
-                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Contact Person</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Nama PIC / No HP WA" required></div>
+                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Estimasi Harga (Angka Saja)</label><input type="number" id="inp-cat-price" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: 25000" required></div>
+                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Contact Person</label><input type="text" id="inp-cat-cp" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Nama PIC / No HP WA" required></div>
                             </div>
-
                             <div class="mt-6 pt-6 border-t border-slate-200">
                                 <label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Katalog / Gambar Menu</label>
                                 <div id="konsumsi-slots-container" class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -1917,17 +1916,35 @@ const supabaseApp = createClient(supabaseUrl, supabaseKey, {
             }, 800);
         }
 
-        function submitDBBus(e) {
+        async function submitDBBus(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-submit-bus');
-            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent"></div>`; btn.disabled = true;
-            setTimeout(() => {
+            const namaInp = document.getElementById('inp-bus-name').value;
+            const cpInp = document.getElementById('inp-bus-cp').value;
+            const hargaInp = document.getElementById('inp-bus-price').value;
+
+            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
+            
+            try {
+                const { error } = await supabaseApp.from('vendor_bus').insert([
+                    { nama: namaInp, kontak: cpInp, harga: parseInt(hargaInp) }
+                ]);
+                if (error) throw error;
+
                 showToast('Data Vendor Bus berhasil disimpan!', 'success');
                 e.target.reset();
                 document.getElementById('name-bus-img').innerText = 'Format: JPG, PNG, WEBP (Max 2MB)';
                 document.getElementById('name-bus-img').classList.remove('text-aw-blue', 'font-bold');
+                
+                await fetchMasterData(); // Segarkan data
+                renderBusCatalog(); // Update katalog di Wizard
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan data Vendor Bus.", "error");
+            } finally {
                 btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Vendor Bus`; btn.disabled = false;
-            }, 800);
+            }
+        }
         }
 
         let konsumsiSlotCount = 3;
@@ -1951,21 +1968,41 @@ const supabaseApp = createClient(supabaseUrl, supabaseKey, {
             container.appendChild(newSlot);
         }
 
-        function submitDBKonsumsi(e) {
+       async function submitDBKonsumsi(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-submit-konsumsi');
-            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent"></div>`; btn.disabled = true;
-            setTimeout(() => {
+            const namaInp = document.getElementById('inp-cat-name').value;
+            const cpInp = document.getElementById('inp-cat-cp').value;
+            const hargaInp = document.getElementById('inp-cat-price').value;
+            const locInp = document.getElementById('inp-konsumsi-lokasi').value;
+
+            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
+            
+            try {
+                let payload = { nama: namaInp, kontak: cpInp, harga: parseInt(hargaInp) };
+                if (locInp && locInp !== "general") {
+                    payload.lokasi_id = parseInt(locInp);
+                }
+
+                const { error } = await supabaseApp.from('vendor_catering').insert([payload]);
+                if (error) throw error;
+
                 showToast('Data Vendor Catering/Konsumsi berhasil disimpan!', 'success');
                 e.target.reset();
                 for(let i=1; i<=konsumsiSlotCount; i++) {
                     const nameEl = document.getElementById(`name-konsumsi-img-${i}`);
                     if(nameEl) { nameEl.innerText = `Gambar ${i}`; nameEl.classList.remove('text-aw-blue', 'font-bold'); }
                 }
+                
+                await fetchMasterData(); // Segarkan data
+                renderCateringCatalog(); // Update UI Katalog
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan data Catering.", "error");
+            } finally {
                 btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Vendor Catering`; btn.disabled = false;
-            }, 800);
+            }
         }
-
         function getNeedsBadgesHtml(needsArray) {
             if(!needsArray || needsArray.length === 0) return '';
             let html = '';
