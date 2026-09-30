@@ -1342,6 +1342,23 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabaseApp = createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false }
 });
+
+/ Fungsi pembantu untuk upload file ke Bucket 'gambar'
+async function uploadImageToSupabase(file) {
+    if (!file) return null;
+    // Bikin nama file unik pakai timestamp biar nggak bentrok
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+    
+    // Upload ke bucket 'gambar'
+    const { data, error } = await supabaseApp.storage.from('gambar').upload(fileName, file);
+    if (error) throw error;
+
+    // Ambil URL Publik dari gambar yang baru diupload
+    const { data: publicUrlData } = supabaseApp.storage.from('gambar').getPublicUrl(fileName);
+    return publicUrlData.publicUrl;
+}
+
         
         // ==========================================
         // MOCK DATA & CONSTANTS
@@ -1922,12 +1939,20 @@ const supabaseApp = createClient(supabaseUrl, supabaseKey, {
             const namaInp = document.getElementById('inp-bus-name').value;
             const cpInp = document.getElementById('inp-bus-cp').value;
             const hargaInp = document.getElementById('inp-bus-price').value;
+            const fileInp = document.getElementById('upload-bus-img'); // Tangkap elemen file
 
             btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
             
             try {
+                let imgUrl = null;
+                // Cek apakah ada file foto yang dipilih
+                if (fileInp.files.length > 0) {
+                    showToast('Sedang mengunggah foto armada...', 'info');
+                    imgUrl = await uploadImageToSupabase(fileInp.files[0]);
+                }
+
                 const { error } = await supabaseApp.from('vendor_bus').insert([
-                    { nama: namaInp, kontak: cpInp, harga: parseInt(hargaInp) }
+                    { nama: namaInp, kontak: cpInp, harga: parseInt(hargaInp), gambar: imgUrl }
                 ]);
                 if (error) throw error;
 
@@ -1978,10 +2003,50 @@ const supabaseApp = createClient(supabaseUrl, supabaseKey, {
             btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
             
             try {
-                let payload = { nama: namaInp, kontak: cpInp, harga: parseInt(hargaInp) };
+                let imgUrlsArray = [];
+                // Looping sebanyak jumlah slot gambar yang ada
+                for (let i = 1; i <= konsumsiSlotCount; i++) {
+                    const currentFileInp = document.getElementById(`upload-konsumsi-img-${i}`);
+                    if (currentFileInp && currentFileInp.files.length > 0) {
+                        showToast(`Mengunggah gambar katalog ${i}...`, 'info');
+                        const uploadedUrl = await uploadImageToSupabase(currentFileInp.files[0]);
+                        if (uploadedUrl) imgUrlsArray.push(uploadedUrl);
+                    }
+                }
+                
+                // Gabungkan semua URL dengan tanda koma (jika ada isinya)
+                const finalGambarStr = imgUrlsArray.length > 0 ? imgUrlsArray.join(',') : null;
+
+                let payload = { 
+                    nama: namaInp, 
+                    kontak: cpInp, 
+                    harga: parseInt(hargaInp), 
+                    gambar: finalGambarStr // Masukkan string panjang yang sudah digabung
+                };
+                
                 if (locInp && locInp !== "general") {
                     payload.lokasi_id = parseInt(locInp);
                 }
+
+                const { error } = await supabaseApp.from('vendor_catering').insert([payload]);
+                if (error) throw error;
+
+                showToast('Data Vendor Catering/Konsumsi berhasil disimpan!', 'success');
+                e.target.reset();
+                for(let i = 1; i <= konsumsiSlotCount; i++) {
+                    const nameEl = document.getElementById(`name-konsumsi-img-${i}`);
+                    if(nameEl) { nameEl.innerText = `Gambar ${i}`; nameEl.classList.remove('text-aw-blue', 'font-bold'); }
+                }
+                
+                await fetchMasterData(); // Segarkan data
+                renderCateringCatalog(); // Update UI Katalog
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan data Catering.", "error");
+            } finally {
+                btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Vendor Catering`; btn.disabled = false;
+            }
+        }
 
                 const { error } = await supabaseApp.from('vendor_catering').insert([payload]);
                 if (error) throw error;
