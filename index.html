@@ -1551,15 +1551,20 @@
         // Fungsi narik data dari Supabase
         async function fetchMasterData() {
             try {
-                // 1. Tarik Data Siswa
-                const { data: dataSiswa, error: errSiswa } = await supabaseApp.from('siswa').select('*').order('nama', { ascending: true });
+                // 1. Tarik Data Siswa (Hanya cabang yang login)
+                const { data: dataSiswa, error: errSiswa } = await supabaseApp
+                    .from('siswa').select('*')
+                    .eq('cabang_id', sessionCabang.id)
+                    .order('nama', { ascending: true });
                 if(dataSiswa) {
-                    // Mapping nama kolom Supabase (nama, kelas) ke atribut objek JS kita (name, class)
                     MOCK_STUDENTS = dataSiswa.map(s => ({ id: s.id, name: s.nama, jenjang: s.jenjang, class: s.kelas }));
                 }
 
-                // 2. Tarik Data Guru
-                const { data: dataGuru, error: errGuru } = await supabaseApp.from('guru').select('*').order('nama', { ascending: true });
+                // 2. Tarik Data Guru (Hanya cabang yang login)
+                const { data: dataGuru, error: errGuru } = await supabaseApp
+                    .from('guru').select('*')
+                    .eq('cabang_id', sessionCabang.id)
+                    .order('nama', { ascending: true });
                 if(dataGuru) {
                     MOCK_GURU = dataGuru.map(g => ({ id: g.id, name: g.nama, pos: g.jabatan }));
                 }
@@ -1784,9 +1789,14 @@
             const properName = nameInp.value.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 
             try {
-                // Proses insert ke tabel 'siswa' di Supabase
+                // Proses insert ke tabel 'siswa' di Supabase (Tambahkan cabang_id)
                 const { error } = await supabaseApp.from('siswa').insert([
-                    { nama: properName, jenjang: jenjangInp.value, kelas: cls }
+                    { 
+                        cabang_id: sessionCabang.id, 
+                        nama: properName, 
+                        jenjang: jenjangInp.value, 
+                        kelas: cls 
+                    }
                 ]);
                 if (error) throw error;
 
@@ -1822,9 +1832,13 @@
             btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
 
             try {
-                // Proses insert ke tabel 'guru' di Supabase
+                // Proses insert ke tabel 'guru' di Supabase (Tambahkan cabang_id)
                 const { error } = await supabaseApp.from('guru').insert([
-                    { nama: nameInp.value, jabatan: posInp.value }
+                    { 
+                        cabang_id: sessionCabang.id, 
+                        nama: nameInp.value, 
+                        jabatan: posInp.value 
+                    }
                 ]);
                 if (error) throw error;
 
