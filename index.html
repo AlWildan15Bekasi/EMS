@@ -1333,12 +1333,16 @@
 
     <script>
         // ==========================================
-        // SUPABASE INITIALIZATION
         // ==========================================
-        const { createClient } = supabase;
-        const supabaseUrl = 'https://jbmzofqwqxwvtdahkmid.supabase.co'; 
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpibXpvZnF3cXh3dnRkYWhrbWlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3Njc4ODksImV4cCI6MjEwNjM0Mzg4OX0.SI5v3deR98o_8OnxiRLVwlrko9yCKYuzZMszkgjQrWo';
-        const supabaseApp = createClient(supabaseUrl, supabaseKey);
+// SUPABASE INITIALIZATION
+// ==========================================
+const { createClient } = supabase;
+const supabaseUrl = 'https://jbmzofqwqxwvtdahkmid.supabase.co'; 
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpibXpvZnF3cXh3dnRkYWhrbWlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3Njc4ODksImV4cCI6MjEwNjM0Mzg4OX0.SI5v3deR98o_8OnxiRLVwlrko9yCKYuzZMszkgjQrWo';
+
+const supabaseApp = createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false }
+});
         
         // ==========================================
         // MOCK DATA & CONSTANTS
