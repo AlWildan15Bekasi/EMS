@@ -1075,55 +1075,60 @@
                         </div>
 
                         <form onsubmit="submitDBLokasi(event)">
-                            <!-- Form Fieldtrip (TANPA CATERING) -->
+                            <!-- Form Fieldtrip -->
                             <div id="form-fieldtrip" class="space-y-5 block animate-in fade-in">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Nama Lokasi</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: Taman Bunga"></div>
-                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Harga Tiket</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Rp 65.000 / tiket"></div>
+                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Nama Lokasi</label><input type="text" id="loc-name-ft" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: Taman Bunga"></div>
+                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Harga Tiket</label><input type="text" id="loc-price-ft" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Rp 65.000 / tiket"></div>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Alamat Lokasi</label><textarea rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none"></textarea></div>
+                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Alamat Lokasi</label><textarea id="loc-addr-ft" rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none"></textarea></div>
                                     <div>
-                                        <label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Google Maps (URL)</label><input type="url" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none mb-3">
-                                        <label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Contact Person</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                                        <label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Contact Person</label><input type="text" id="loc-cp-ft" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
                                     </div>
                                 </div>
-                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Fasilitas / Activity</label><textarea rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none" placeholder="Cth: Gazebo, Edukasi alam..."></textarea></div>
+                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Fasilitas / Activity (Pisahkan dgn koma)</label><textarea id="loc-amen-ft" rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none" placeholder="Cth: Gazebo, Edukasi alam, Pemandu..."></textarea></div>
                             </div>
 
                             <!-- Form Outing Class -->
                             <div id="form-outing" class="space-y-5 hidden animate-in fade-in">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Nama Instansi / Museum</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"></div>
-                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Harga Tiket</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: Gratis / Rp 10.000"></div>
+                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Nama Instansi / Museum</label><input type="text" id="loc-name-out" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"></div>
+                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Harga Tiket</label><input type="text" id="loc-price-out" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: Gratis / Rp 10.000"></div>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Alamat Instansi</label><textarea rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none"></textarea></div>
+                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Alamat Instansi</label><textarea id="loc-addr-out" rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none"></textarea></div>
                                     <div>
-                                        <label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Google Maps</label><input type="url" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none mb-3">
-                                        <label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Contact Person</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                                        <label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Contact Person</label><input type="text" id="loc-cp-out" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
                                     </div>
                                 </div>
-                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Activity</label><textarea rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none" placeholder="Cth: Presentasi, Keliling museum..."></textarea></div>
+                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Activity (Pisahkan dgn koma)</label><textarea id="loc-amen-out" rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none" placeholder="Cth: Presentasi, Keliling museum..."></textarea></div>
                             </div>
 
                             <!-- Form GTC -->
                             <div id="form-gtc" class="space-y-5 hidden animate-in fade-in">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Nama Universitas</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"></div>
-                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Fakultas</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"></div>
+                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Nama Universitas</label><input type="text" id="loc-name-gtc" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"></div>
+                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Fakultas</label><input type="text" id="loc-fak-gtc" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"></div>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Jurusan / Prodi</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"></div>
-                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Contact Person (Humas)</label><input type="text" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"></div>
+                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Jurusan / Prodi</label><input type="text" id="loc-jur-gtc" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"></div>
+                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Contact Person (Humas)</label><input type="text" id="loc-cp-gtc" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"></div>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Alamat Univ / Fakultas</label><textarea rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none"></textarea></div>
-                                    <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Google Maps (URL)</label><input type="url" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"></div>
-                                </div>
+                                <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Alamat Univ / Fakultas</label><textarea id="loc-addr-gtc" rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none resize-none"></textarea></div>
                             </div>
 
-                            <div class="pt-6 mt-6 border-t border-slate-200">
+                            <!-- NEW: Kebutuhan Logistik Checkbox -->
+                            <div class="pt-5 mt-5 border-t border-slate-200">
+                                <label class="block text-xs font-bold text-slate-600 uppercase mb-3 pl-1">Kebutuhan Logistik Wajib (Needs)</label>
+                                <div class="flex gap-4 mb-5">
+                                    <label class="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 hover:border-aw-blue transition">
+                                        <input type="checkbox" id="need-bus" value="Bus" class="w-4 h-4 text-aw-blue rounded focus:ring-aw-blue"> <i class="fa-solid fa-bus text-aw-blue"></i> Butuh Bus
+                                    </label>
+                                    <label class="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 hover:border-orange-500 transition">
+                                        <input type="checkbox" id="need-cat" value="Catering" class="w-4 h-4 text-orange-500 rounded focus:ring-orange-500"> <i class="fa-solid fa-utensils text-orange-500"></i> Butuh Catering
+                                    </label>
+                                </div>
                                 <button type="submit" id="btn-submit-lokasi" class="bg-aw-green hover:bg-emerald-600 text-white font-bold py-3 px-6 rounded-xl shadow-md transition flex items-center gap-2"><i class="fa-solid fa-save"></i> Simpan Lokasi</button>
                             </div>
                         </form>
@@ -1363,7 +1368,7 @@ async function uploadImageToSupabase(file) {
         // ==========================================
         // MOCK DATA & CONSTANTS
         // ==========================================
-        const MOCK_LOCATIONS = [
+        let MOCK_LOCATIONS = [
             { 
                 id: 1, name: 'Taman Bunga Nusantara', type: 'Fieldtrip', area: 'Cianjur, Jawa Barat', price: 'Rp 65.000 / tiket',
                 needs: ['Bus'],
@@ -1599,6 +1604,23 @@ async function uploadImageToSupabase(file) {
                 const { data: dataCat, error: errCat } = await supabaseApp.from('vendor_catering').select('*');
                 if(dataCat) {
                     MOCK_CATERING = dataCat.map(c => ({ id: c.id, locId: c.lokasi_id, name: c.nama, price: c.harga, img: c.gambar, cp: c.kontak }));
+                }
+
+                // 5. Tarik Data Lokasi
+                const { data: dataLokasi, error: errLokasi } = await supabaseApp.from('lokasi').select('*');
+                if(dataLokasi && dataLokasi.length > 0) {
+                    MOCK_LOCATIONS = dataLokasi.map(l => ({
+                        id: l.id, 
+                        name: l.nama, 
+                        type: l.jenis || 'Fieldtrip', 
+                        area: l.alamat || '', 
+                        price: l.harga || '', 
+                        needs: l.needs || [], 
+                        img: l.gambar, 
+                        desc: l.deskripsi || l.alamat || '', 
+                        amen: l.fasilitas || [], 
+                        cp: l.kontak || ''
+                    }));
                 }
 
             } catch (error) {
@@ -1920,17 +1942,88 @@ async function uploadImageToSupabase(file) {
             if(val === 'Goes to Campus') document.getElementById('form-gtc').classList.remove('hidden');
         }
 
-        function submitDBLokasi(e) {
+        async function submitDBLokasi(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-submit-lokasi');
-            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent"></div>`; btn.disabled = true;
-            setTimeout(() => {
+            const type = document.getElementById('inp-lokasi-type').value;
+            const fileInp = document.getElementById('upload-lokasi-img');
+
+            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; 
+            btn.disabled = true;
+
+            let nama = '', harga = '', alamat = '', cp = '', fasilitas = '';
+
+            // 1. Ambil data berdasarkan jenis form yang aktif
+            if(type === 'Fieldtrip') {
+                nama = document.getElementById('loc-name-ft').value;
+                harga = document.getElementById('loc-price-ft').value;
+                alamat = document.getElementById('loc-addr-ft').value;
+                cp = document.getElementById('loc-cp-ft').value;
+                fasilitas = document.getElementById('loc-amen-ft').value;
+            } else if (type === 'Outing Class') {
+                nama = document.getElementById('loc-name-out').value;
+                harga = document.getElementById('loc-price-out').value;
+                alamat = document.getElementById('loc-addr-out').value;
+                cp = document.getElementById('loc-cp-out').value;
+                fasilitas = document.getElementById('loc-amen-out').value;
+            } else {
+                const univ = document.getElementById('loc-name-gtc').value;
+                const fak = document.getElementById('loc-fak-gtc').value;
+                const jur = document.getElementById('loc-jur-gtc').value;
+                nama = `${univ} - ${fak} (${jur})`;
+                harga = 'Kontak Humas';
+                alamat = document.getElementById('loc-addr-gtc').value;
+                cp = document.getElementById('loc-cp-gtc').value;
+                fasilitas = "Kunjungan Kampus";
+            }
+
+            // 2. Kumpulkan Array Needs
+            let needs = [];
+            if(document.getElementById('need-bus').checked) needs.push('Bus');
+            if(document.getElementById('need-cat').checked) needs.push('Catering');
+
+            try {
+                // 3. Upload Foto jika ada
+                let imgUrl = null;
+                if (fileInp.files.length > 0) {
+                    showToast('Sedang mengunggah foto lokasi...', 'info');
+                    imgUrl = await uploadImageToSupabase(fileInp.files[0]);
+                }
+
+                // 4. Ubah string fasilitas dipisah koma menjadi Array murni
+                let fasArray = fasilitas.split(',').map(item => item.trim()).filter(i => i);
+
+                // 5. Susun Payload
+                const payload = {
+                    nama: nama,
+                    jenis: type,
+                    harga: harga,
+                    alamat: alamat,
+                    kontak: cp,
+                    deskripsi: fasilitas, // Teks utuh
+                    fasilitas: fasArray,  // Format array untuk badge
+                    needs: needs,
+                    gambar: imgUrl
+                };
+
+                // 6. Simpan ke Database
+                const { error } = await supabaseApp.from('lokasi').insert([payload]);
+                if (error) throw error;
+
                 showToast(`Data Lokasi berhasil ditambahkan ke Katalog!`, 'success');
                 e.target.reset();
                 document.getElementById('name-lokasi-img').innerText = 'Format: JPG, PNG, WEBP (Max 2MB)';
                 document.getElementById('name-lokasi-img').classList.remove('text-aw-blue', 'font-bold');
-                btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Lokasi`; btn.disabled = false;
-            }, 800);
+                
+                await fetchMasterData(); // Segarkan data agar update
+                renderLocations(); // Update UI
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan data lokasi.", "error");
+            } finally {
+                btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Lokasi`; 
+                btn.disabled = false;
+            }
         }
 
         async function submitDBBus(e) {
