@@ -676,10 +676,11 @@
         <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col relative overflow-hidden border border-slate-100 p-6">
             <button onclick="closeModal('add-siswa-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 transition-colors"><i class="fa-solid fa-times"></i></button>
             <div class="w-12 h-12 bg-blue-50 text-aw-blue rounded-full flex items-center justify-center text-xl mb-4 shadow-inner border border-blue-100"><i class="fa-solid fa-user-plus"></i></div>
-            <h3 class="font-black text-slate-800 text-xl mb-1">Tambah Siswa Manual</h3>
+           <h3 id="modal-title-siswa" class="font-black text-slate-800 text-xl mb-1">Tambah Siswa Manual</h3>
             <p class="text-xs text-slate-500 mb-6 font-medium">Pastikan format penulisan nama dan kelas sesuai standar akademik.</p>
 
             <form onsubmit="submitNewSiswa(event)" class="space-y-4">
+                <input type="hidden" id="edit-siswa-id" value="">
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Nama Lengkap Siswa</label>
                     <input type="text" id="inp-new-siswa-name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-aw-blue outline-none transition text-sm font-medium text-slate-700" placeholder="Cth: Muhammad Al Fatih" required>
@@ -712,10 +713,11 @@
         <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col relative overflow-hidden border border-slate-100 p-6">
             <button onclick="closeModal('add-guru-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 transition-colors"><i class="fa-solid fa-times"></i></button>
             <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center text-xl mb-4 shadow-inner border border-amber-100"><i class="fa-solid fa-chalkboard-user"></i></div>
-            <h3 class="font-black text-slate-800 text-xl mb-1">Tambah Guru / Staff</h3>
+            <h3 id="modal-title-guru" class="font-black text-slate-800 text-xl mb-1">Tambah Guru / Staff</h3>
             <p class="text-xs text-slate-500 mb-6 font-medium">Input data pengajar atau staff cabang.</p>
 
             <form onsubmit="submitNewGuru(event)" class="space-y-4">
+                <input type="hidden" id="edit-guru-id" value="">
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Nama Lengkap & Gelar</label>
                     <input type="text" id="inp-new-guru-name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-aw-blue outline-none transition text-sm font-medium text-slate-700" placeholder="Cth: Ahmad Fulan, S.Pd" required>
@@ -977,9 +979,9 @@
                             <h2 class="text-2xl font-black text-aw-navy mb-1 tracking-tight">Database Siswa</h2>
                             <p class="text-slate-500 text-sm font-medium">Kelola data siswa aktif Cabang 15 Bekasi.</p>
                         </div>
-                        <div class="flex gap-2 w-full sm:w-auto">
+                       <div class="flex gap-2 w-full sm:w-auto">
                             <button onclick="openImportModal('siswa')" class="flex-1 sm:flex-none bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-bold text-sm transition flex justify-center items-center gap-2"><i class="fa-solid fa-file-csv"></i> Import CSV</button>
-                            <button onclick="openModal('add-siswa-modal')" class="flex-1 sm:flex-none bg-aw-blue hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition flex justify-center items-center gap-2"><i class="fa-solid fa-user-plus"></i> Tambah Siswa</button>
+                            <button onclick="prepAddModal('Siswa')" class="flex-1 sm:flex-none bg-aw-blue hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition flex justify-center items-center gap-2"><i class="fa-solid fa-user-plus"></i> Tambah Siswa</button>
                         </div>
                     </div>
                     
@@ -1019,7 +1021,7 @@
                         </div>
                         <div class="flex gap-2 w-full sm:w-auto">
                             <button onclick="openImportModal('guru')" class="flex-1 sm:flex-none bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-bold text-sm transition flex justify-center items-center gap-2"><i class="fa-solid fa-file-csv"></i> Import CSV</button>
-                            <button onclick="openModal('add-guru-modal')" class="flex-1 sm:flex-none bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition flex justify-center items-center gap-2"><i class="fa-solid fa-user-plus"></i> Tambah Guru</button>
+                            <button onclick="prepAddModal('Guru')" class="flex-1 sm:flex-none bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition flex justify-center items-center gap-2"><i class="fa-solid fa-user-plus"></i> Tambah Guru</button>
                         </div>
                     </div>
                     
@@ -1834,16 +1836,18 @@ async function uploadImageToSupabase(file) {
             const properName = nameInp.value.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 
             try {
-                // Proses insert ke tabel 'siswa' di Supabase (Tambahkan cabang_id)
-                const { error } = await supabaseApp.from('siswa').insert([
-                    { 
-                        cabang_id: sessionCabang.id, 
-                        nama: properName, 
-                        jenjang: jenjangInp.value, 
-                        kelas: cls 
-                    }
-                ]);
-                if (error) throw error;
+                const editId = document.getElementById('edit-siswa-id').value;
+                const payload = { cabang_id: sessionCabang.id, nama: properName, jenjang: jenjangInp.value, kelas: cls };
+                let errorObj = null;
+
+                if (editId) {
+                    const { error } = await supabaseApp.from('siswa').update(payload).eq('id', editId);
+                    errorObj = error;
+                } else {
+                    const { error } = await supabaseApp.from('siswa').insert([payload]);
+                    errorObj = error;
+                }
+                if (errorObj) throw errorObj;
 
                 // Update opsi dropdown kelas jika kelas baru
                 const filterDropdown = document.getElementById('filter-kelas-siswa');
@@ -1851,7 +1855,7 @@ async function uploadImageToSupabase(file) {
                 for (let i = 0; i < filterDropdown.options.length; i++) { if (filterDropdown.options[i].value === cls) { exists = true; break; } }
                 if (!exists) { const opt = document.createElement('option'); opt.value = cls; opt.innerHTML = cls; filterDropdown.appendChild(opt); }
 
-                showToast(`Siswa ${properName} berhasil ditambahkan!`, 'success');
+                showToast(`Data Siswa ${properName} berhasil disimpan!`, 'success');
                 closeModal('add-siswa-modal');
                 
                 // Refresh data dari server
@@ -1877,17 +1881,20 @@ async function uploadImageToSupabase(file) {
             btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
 
             try {
-                // Proses insert ke tabel 'guru' di Supabase (Tambahkan cabang_id)
-                const { error } = await supabaseApp.from('guru').insert([
-                    { 
-                        cabang_id: sessionCabang.id, 
-                        nama: nameInp.value, 
-                        jabatan: posInp.value 
-                    }
-                ]);
-                if (error) throw error;
+                const editId = document.getElementById('edit-guru-id').value;
+                const payload = { cabang_id: sessionCabang.id, nama: nameInp.value, jabatan: posInp.value };
+                let errorObj = null;
 
-                showToast(`Data Guru berhasil ditambahkan!`, 'success');
+                if (editId) {
+                    const { error } = await supabaseApp.from('guru').update(payload).eq('id', editId);
+                    errorObj = error;
+                } else {
+                    const { error } = await supabaseApp.from('guru').insert([payload]);
+                    errorObj = error;
+                }
+                if (errorObj) throw errorObj;
+
+                showToast(`Data Guru berhasil disimpan!`, 'success');
                 closeModal('add-guru-modal');
                 
                 // Refresh data dari server
@@ -1902,8 +1909,47 @@ async function uploadImageToSupabase(file) {
                 btn.innerHTML = `Simpan Data Guru`; btn.disabled = false;
             }
         }
+        function prepAddModal(type) {
+            if (type === 'Siswa') {
+                document.getElementById('edit-siswa-id').value = '';
+                document.getElementById('inp-new-siswa-name').value = '';
+                document.getElementById('inp-new-siswa-class').value = '';
+                document.getElementById('inp-new-siswa-jenjang').value = 'SD';
+                document.getElementById('modal-title-siswa').innerText = 'Tambah Siswa Manual';
+                document.getElementById('btn-submit-siswa').innerHTML = 'Simpan Data Siswa';
+                openModal('add-siswa-modal');
+            } else if (type === 'Guru') {
+                document.getElementById('edit-guru-id').value = '';
+                document.getElementById('inp-new-guru-name').value = '';
+                document.getElementById('inp-new-guru-pos').value = '';
+                document.getElementById('modal-title-guru').innerText = 'Tambah Guru / Staff';
+                document.getElementById('btn-submit-guru').innerHTML = 'Simpan Data Guru';
+                openModal('add-guru-modal');
+            }
+        }
 
-        function editData(type, id) { showToast(`Fitur update data ${type} ID: ${id} akan membuka form pengisian.`, 'info'); }
+        function editData(type, id) {
+            if (type === 'Siswa') {
+                const s = MOCK_STUDENTS.find(item => item.id === id);
+                if(!s) return;
+                document.getElementById('edit-siswa-id').value = id;
+                document.getElementById('inp-new-siswa-name').value = s.name;
+                document.getElementById('inp-new-siswa-jenjang').value = s.jenjang;
+                document.getElementById('inp-new-siswa-class').value = s.class;
+                document.getElementById('modal-title-siswa').innerText = 'Edit Data Siswa';
+                document.getElementById('btn-submit-siswa').innerHTML = '<i class="fa-solid fa-save"></i> Update Data Siswa';
+                openModal('add-siswa-modal');
+            } else if (type === 'Guru') {
+                const g = MOCK_GURU.find(item => item.id === id);
+                if(!g) return;
+                document.getElementById('edit-guru-id').value = id;
+                document.getElementById('inp-new-guru-name').value = g.name;
+                document.getElementById('inp-new-guru-pos').value = g.pos;
+                document.getElementById('modal-title-guru').innerText = 'Edit Data Guru';
+                document.getElementById('btn-submit-guru').innerHTML = '<i class="fa-solid fa-save"></i> Update Data Guru';
+                openModal('add-guru-modal');
+            }
+        }
 
         function openImportModal(type) {
             document.getElementById('csv-type').value = type;
