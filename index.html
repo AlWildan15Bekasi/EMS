@@ -2138,11 +2138,13 @@ async function uploadImageToSupabase(file) {
             const container = document.getElementById('wiz-bus-catalog');
             let html = '';
             MOCK_BUS.forEach(b => {
+                let imgSrc = b.img ? b.img : 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
+
                 html += `
                 <label class="cursor-pointer relative group">
                     <input type="radio" name="wiz_bus_radio" value="${b.id}" class="peer sr-only" onchange="wizData.busVendor = this.value; checkStep3()">
-                    <div class="rounded-xl border-2 border-slate-200 p-3 bg-white peer-checked:border-aw-blue peer-checked:bg-blue-50 transition-all hover:border-blue-300 shadow-sm">
-                        <img src="${b.img}" class="w-full h-24 object-cover rounded-lg mb-3 shadow-sm group-hover:scale-105 transition-transform">
+                    <div class="rounded-xl border-2 border-slate-200 p-3 bg-white peer-checked:border-aw-blue peer-checked:bg-blue-50 transition-all hover:border-blue-300 shadow-sm flex flex-col h-full">
+                        <img src="${imgSrc}" class="w-full h-24 object-cover rounded-lg mb-3 shadow-sm group-hover:scale-105 transition-transform">
                         <h4 class="font-bold text-slate-800 text-sm mb-1">${b.name}</h4>
                         <p class="text-xs font-black text-aw-blue">Rp ${b.price.toLocaleString('id-ID')} <span class="text-[10px] font-medium text-slate-500">/ hari</span></p>
                     </div>
@@ -2157,13 +2159,20 @@ async function uploadImageToSupabase(file) {
             const validCats = MOCK_CATERING.filter(c => !c.locId || c.locId === activeLocation.id);
             
             validCats.forEach(c => {
-                let badge = c.locId ? `<span class="absolute top-2 left-2 bg-aw-green text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-sm">Satu Lokasi</span>` : '';
+                let badge = c.locId ? `<span class="absolute top-2 left-2 z-10 bg-aw-green text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-sm">Satu Lokasi</span>` : '';
+                
+                let imgArray = c.img ? c.img.split(',') : ['https://placehold.co/600x400/ffedd5/ea580c?text=No+Menu'];
+                let imagesHtml = '<div class="flex gap-2 overflow-x-auto hide-scrollbar mb-3 rounded-lg">';
+                imgArray.forEach(url => {
+                    imagesHtml += `<img src="${url.trim()}" class="w-[85%] shrink-0 h-24 object-cover rounded-lg shadow-sm group-hover:scale-105 transition-transform">`;
+                });
+                imagesHtml += '</div>';
+
                 html += `
                 <label class="cursor-pointer relative group">
                     <input type="radio" name="wiz_cat_radio" value="${c.id}" class="peer sr-only" onchange="wizData.catVendor = this.value; checkStep4()">
-                    <div class="rounded-xl border-2 border-slate-200 p-3 bg-white peer-checked:border-orange-500 peer-checked:bg-orange-50 transition-all hover:border-orange-300 relative overflow-hidden shadow-sm">
-                        ${badge}
-                        <img src="${c.img}" class="w-full h-24 object-cover rounded-lg mb-3 shadow-sm group-hover:scale-105 transition-transform">
+                    <div class="rounded-xl border-2 border-slate-200 p-3 bg-white peer-checked:border-orange-500 peer-checked:bg-orange-50 transition-all hover:border-orange-300 relative overflow-hidden shadow-sm flex flex-col h-full">
+                        ${badge}${imagesHtml}
                         <h4 class="font-bold text-slate-800 text-sm mb-1 truncate">${c.name}</h4>
                         <p class="text-xs font-black text-orange-600">Rp ${c.price.toLocaleString('id-ID')} <span class="text-[10px] font-medium text-slate-500">/ pax</span></p>
                     </div>
