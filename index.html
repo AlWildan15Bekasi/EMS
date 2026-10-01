@@ -1609,18 +1609,21 @@ async function uploadImageToSupabase(file) {
                 // 5. Tarik Data Lokasi
                 const { data: dataLokasi, error: errLokasi } = await supabaseApp.from('lokasi').select('*');
                 if(dataLokasi && dataLokasi.length > 0) {
-                    MOCK_LOCATIONS = dataLokasi.map(l => ({
-                        id: l.id, 
-                        name: l.nama, 
-                        type: l.jenis || 'Fieldtrip', 
-                        area: l.alamat || '', 
-                        price: l.harga || '', 
-                        needs: l.needs || [], 
-                        img: l.gambar, 
-                        desc: l.deskripsi || l.alamat || '', 
-                        amen: l.fasilitas || [], 
-                        cp: l.kontak || ''
-                    }));
+                    MOCK_LOCATIONS = dataLokasi.map(l => {
+                        let fallbackImg = 'https://placehold.co/800x400/e2e8f0/64748b?text=Lokasi';
+                        return {
+                            id: l.id, 
+                            name: l.nama, 
+                            type: l.jenis || 'Fieldtrip', 
+                            area: l.area || '', 
+                            price: l.harga || '', 
+                            needs: l.needs || [], 
+                            img: l.gambar || fallbackImg, 
+                            desc: l.deskripsi || l.area || '', 
+                            amen: l.fasilitas || [], 
+                            cp: l.kontak || ''
+                        };
+                    });
                 }
 
             } catch (error) {
@@ -1942,7 +1945,7 @@ async function uploadImageToSupabase(file) {
             if(val === 'Goes to Campus') document.getElementById('form-gtc').classList.remove('hidden');
         }
 
-        async function submitDBLokasi(e) {
+       async function submitDBLokasi(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-submit-lokasi');
             const type = document.getElementById('inp-lokasi-type').value;
@@ -1951,36 +1954,37 @@ async function uploadImageToSupabase(file) {
             btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; 
             btn.disabled = true;
 
-            let nama = '', harga = '', alamat = '', cp = '', fasilitas = '';
+            let namaUtama = '', harga = '', areaLoc = '', cp = '', fasilitas = '';
+            let univ = null, fak = null, jur = null;
 
             // 1. Ambil data berdasarkan jenis form yang aktif
             if(type === 'Fieldtrip') {
-                nama = document.getElementById('loc-name-ft').value;
+                namaUtama = document.getElementById('loc-name-ft').value;
                 harga = document.getElementById('loc-price-ft').value;
-                alamat = document.getElementById('loc-addr-ft').value;
+                areaLoc = document.getElementById('loc-addr-ft').value;
                 cp = document.getElementById('loc-cp-ft').value;
                 fasilitas = document.getElementById('loc-amen-ft').value;
             } else if (type === 'Outing Class') {
-                nama = document.getElementById('loc-name-out').value;
+                namaUtama = document.getElementById('loc-name-out').value;
                 harga = document.getElementById('loc-price-out').value;
-                alamat = document.getElementById('loc-addr-out').value;
+                areaLoc = document.getElementById('loc-addr-out').value;
                 cp = document.getElementById('loc-cp-out').value;
                 fasilitas = document.getElementById('loc-amen-out').value;
             } else {
-                const univ = document.getElementById('loc-name-gtc').value;
-                const fak = document.getElementById('loc-fak-gtc').value;
-                const jur = document.getElementById('loc-jur-gtc').value;
-                nama = `${univ} - ${fak} (${jur})`;
+                univ = document.getElementById('loc-name-gtc').value;
+                fak = document.getElementById('loc-fak-gtc').value;
+                jur = document.getElementById('loc-jur-gtc').value;
+                namaUtama = `${univ} - ${fak} (${jur})`;
                 harga = 'Kontak Humas';
-                alamat = document.getElementById('loc-addr-gtc').value;
+                areaLoc = document.getElementById('loc-addr-gtc').value;
                 cp = document.getElementById('loc-cp-gtc').value;
                 fasilitas = "Kunjungan Kampus";
             }
 
             // 2. Kumpulkan Array Needs
-            let needs = [];
-            if(document.getElementById('need-bus').checked) needs.push('Bus');
-            if(document.getElementById('need-cat').checked) needs.push('Catering');
+            let needsArray = [];
+            if(document.getElementById('need-bus').checked) needsArray.push('Bus');
+            if(document.getElementById('need-cat').checked) needsArray.push('Catering');
 
             try {
                 // 3. Upload Foto jika ada
@@ -1995,15 +1999,18 @@ async function uploadImageToSupabase(file) {
 
                 // 5. Susun Payload
                 const payload = {
-                    nama: nama,
+                    nama: namaUtama,
                     jenis: type,
                     harga: harga,
-                    alamat: alamat,
+                    area: areaLoc,
                     kontak: cp,
                     deskripsi: fasilitas, // Teks utuh
                     fasilitas: fasArray,  // Format array untuk badge
-                    needs: needs,
-                    gambar: imgUrl
+                    needs: needsArray,
+                    gambar: imgUrl,
+                    nama_univ: univ,
+                    fakultas: fak,
+                    jurusan: jur
                 };
 
                 // 6. Simpan ke Database
