@@ -830,8 +830,11 @@
                 </button>
 
                 <p class="px-3 text-[10px] font-bold text-blue-300/70 uppercase tracking-widest mt-6 mb-2">Event Planning</p>
+                <button onclick="switchTab('katalog')" id="nav-katalog" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-blue-200 hover:text-white hover:bg-white/5 font-medium transition border-l-4 border-transparent">
+                    <i class="fa-solid fa-store w-5 text-center"></i> Katalog Master
+                </button>
                 <button onclick="switchTab('booking')" id="nav-booking" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-blue-200 hover:text-white hover:bg-white/5 font-medium transition border-l-4 border-transparent">
-                    <i class="fa-solid fa-magnifying-glass-location w-5 text-center"></i> Cari Lokasi
+                    <i class="fa-solid fa-magnifying-glass-location w-5 text-center"></i> Booking Wizard
                 </button>
                 <button onclick="switchTab('calendar')" id="nav-calendar" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-blue-200 hover:text-white hover:bg-white/5 font-medium transition border-l-4 border-transparent">
                     <i class="fa-regular fa-calendar-days w-5 text-center"></i> Kalender
@@ -1077,6 +1080,7 @@
                         </div>
 
                         <form onsubmit="submitDBLokasi(event)">
+                            <input type="hidden" id="edit-lokasi-id" value="">
                             <!-- Form Fieldtrip -->
                             <div id="form-fieldtrip" class="space-y-5 block animate-in fade-in">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -1157,6 +1161,7 @@
                         </div>
 
                         <form onsubmit="submitDBBus(event)" class="space-y-5">
+                            <input type="hidden" id="edit-bus-id" value="">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Nama Vendor Bus</label><input type="text" id="inp-bus-name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: PO. Haryanto / Big Bird" required></div>
                                 <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Contact Person</label><input type="text" id="inp-bus-cp" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Nama PIC / No HP WA" required></div>
@@ -1177,6 +1182,7 @@
                     </div>
                     <div class="glass-card p-6 md:p-8">
                        <form onsubmit="submitDBKonsumsi(event)" class="space-y-5">
+                            <input type="hidden" id="edit-cat-id" value="">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div><label class="block text-xs font-bold text-slate-600 uppercase mb-2 pl-1">Nama Vendor Catering</label><input type="text" id="inp-cat-name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" placeholder="Cth: Catering Ibu Siti / McD" required></div>
                                 <div>
@@ -1220,6 +1226,22 @@
                     </div>
                 </div>
 
+                <!-- TAB: KATALOG MASTER -->
+                <div id="tab-katalog" class="tab-content hidden fade-in max-w-6xl mx-auto space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-black text-aw-navy mb-1 tracking-tight">Katalog Master Data</h2>
+                        <p class="text-slate-500 text-sm font-medium">Etalase lokasi, bus, dan konsumsi. Gunakan fitur edit atau hapus dari sini.</p>
+                    </div>
+                    <div class="glass-card p-2 flex flex-col lg:flex-row gap-2 items-center sticky top-0 z-20 shadow-sm border-b-4 border-b-aw-blue">
+                        <div class="flex gap-2 w-full lg:w-auto p-2 lg:p-0">
+                            <button onclick="setKatalogFilter('Lokasi')" id="btn-kat-Lokasi" class="flex-1 lg:flex-none active whitespace-nowrap px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 bg-aw-navy text-white shadow-md"><i class="fa-solid fa-map-location-dot mr-1"></i> Lokasi</button>
+                            <button onclick="setKatalogFilter('Bus')" id="btn-kat-Bus" class="flex-1 lg:flex-none whitespace-nowrap px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 bg-transparent text-slate-500 hover:bg-white hover:shadow-sm"><i class="fa-solid fa-bus mr-1"></i> Bus</button>
+                            <button onclick="setKatalogFilter('Konsumsi')" id="btn-kat-Konsumsi" class="flex-1 lg:flex-none whitespace-nowrap px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 bg-transparent text-slate-500 hover:bg-white hover:shadow-sm"><i class="fa-solid fa-utensils mr-1"></i> Konsumsi</button>
+                        </div>
+                    </div>
+                    <div id="katalog-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-10"></div>
+                </div>
+                
                 <!-- TAB: CARI LOKASI -->
                 <div id="tab-booking" class="tab-content hidden fade-in max-w-6xl mx-auto space-y-6">
                     <div>
@@ -1320,6 +1342,10 @@
                     </button>
                     <!-- Event Mobile Icons -->
                     <div class="w-px h-8 bg-slate-200 mx-1 shrink-0"></div>
+                    <button onclick="switchTab('katalog')" id="mob-katalog" class="flex flex-col items-center p-2 min-w-[70px] text-slate-400 transition-colors shrink-0">
+                        <div class="p-1.5 rounded-xl mb-1"><i class="fa-solid fa-store text-lg"></i></div>
+                        <span class="text-[9px] font-bold uppercase tracking-wide">Katalog</span>
+                    </button>
                     <button onclick="switchTab('booking')" id="mob-booking" class="flex flex-col items-center p-2 min-w-[70px] text-slate-400 transition-colors shrink-0">
                         <div class="p-1.5 rounded-xl mb-1"><i class="fa-solid fa-magnifying-glass-location text-lg"></i></div>
                         <span class="text-[9px] font-bold uppercase tracking-wide">Cari</span>
@@ -1543,8 +1569,9 @@ async function uploadImageToSupabase(file) {
             }, 400);
         }
 
+        // Fungsi narik data dari Supabase
         function switchTab(tabId) {
-            const tabs = ['information', 'booking', 'calendar', 'history', 'db-siswa', 'db-guru', 'db-lokasi', 'db-bus', 'db-konsumsi'];
+            const tabs = ['information', 'booking', 'katalog', 'calendar', 'history', 'db-siswa', 'db-guru', 'db-lokasi', 'db-bus', 'db-konsumsi', 'arsip'];
             tabs.forEach(t => {
                 const contentEl = document.getElementById(`tab-${t}`);
                 if(contentEl) { contentEl.classList.add('hidden'); if(t === 'calendar') contentEl.classList.remove('flex'); }
@@ -1575,77 +1602,178 @@ async function uploadImageToSupabase(file) {
             if(mainCalendar) { mainCalendar.removeAllEvents(); mainCalendar.addEventSource(GLOBAL_EVENTS); }
         }
 
-        // Fungsi narik data dari Supabase
+        // MOCK_LOCATIONS fetch data logic has been established
         async function fetchMasterData() {
             try {
-                // 1. Tarik Data Siswa (Hanya cabang yang login)
-                const { data: dataSiswa, error: errSiswa } = await supabaseApp
-                    .from('siswa').select('*')
-                    .eq('cabang_id', sessionCabang.id)
-                    .order('nama', { ascending: true });
-                if(dataSiswa) {
-                    MOCK_STUDENTS = dataSiswa.map(s => ({ id: s.id, name: s.nama, jenjang: s.jenjang, class: s.kelas }));
-                }
+                const { data: dataSiswa } = await supabaseApp.from('siswa').select('*').eq('cabang_id', sessionCabang.id).order('nama', { ascending: true });
+                if(dataSiswa) MOCK_STUDENTS = dataSiswa.map(s => ({ id: s.id, name: s.nama, jenjang: s.jenjang, class: s.kelas }));
 
-                // 2. Tarik Data Guru (Hanya cabang yang login)
-                const { data: dataGuru, error: errGuru } = await supabaseApp
-                    .from('guru').select('*')
-                    .eq('cabang_id', sessionCabang.id)
-                    .order('nama', { ascending: true });
-                if(dataGuru) {
-                    MOCK_GURU = dataGuru.map(g => ({ id: g.id, name: g.nama, pos: g.jabatan }));
-                }
+                const { data: dataGuru } = await supabaseApp.from('guru').select('*').eq('cabang_id', sessionCabang.id).order('nama', { ascending: true });
+                if(dataGuru) MOCK_GURU = dataGuru.map(g => ({ id: g.id, name: g.nama, pos: g.jabatan }));
 
-                // 3. Tarik Data Vendor Bus
-                const { data: dataBus, error: errBus } = await supabaseApp.from('vendor_bus').select('*');
-                if(dataBus) {
-                    MOCK_BUS = dataBus.map(b => ({ id: b.id, name: b.nama, price: b.harga, img: b.gambar, cp: b.kontak }));
-                }
+                const { data: dataBus } = await supabaseApp.from('vendor_bus').select('*');
+                if(dataBus) MOCK_BUS = dataBus.map(b => ({ id: b.id, name: b.nama, price: b.harga, img: b.gambar, cp: b.kontak }));
 
-                // 4. Tarik Data Vendor Catering
-                const { data: dataCat, error: errCat } = await supabaseApp.from('vendor_catering').select('*');
-                if(dataCat) {
-                    MOCK_CATERING = dataCat.map(c => ({ id: c.id, locId: c.lokasi_id, name: c.nama, price: c.harga, img: c.gambar, cp: c.kontak }));
-                }
+                const { data: dataCat } = await supabaseApp.from('vendor_catering').select('*');
+                if(dataCat) MOCK_CATERING = dataCat.map(c => ({ id: c.id, locId: c.lokasi_id, name: c.nama, price: c.harga, img: c.gambar, cp: c.kontak }));
 
-                // 5. Tarik Data Lokasi
-                const { data: dataLokasi, error: errLokasi } = await supabaseApp.from('lokasi').select('*');
-                if(dataLokasi && dataLokasi.length > 0) {
-                    MOCK_LOCATIONS = dataLokasi.map(l => {
-                        let fallbackImg = 'https://placehold.co/800x400/e2e8f0/64748b?text=Lokasi';
-                        return {
-                            id: l.id, 
-                            name: l.nama, 
-                            type: l.jenis || 'Fieldtrip', 
-                            area: l.area || '', 
-                            price: l.harga || '', 
-                            needs: l.needs || [], 
-                            img: l.gambar || fallbackImg, 
-                            desc: l.deskripsi || l.area || '', 
-                            amen: l.fasilitas || [], 
-                            cp: l.kontak || ''
-                        };
-                    });
-                }
-
-            } catch (error) {
-                console.error("Gagal menarik data master:", error);
-                showToast("Koneksi Supabase gagal. Menampilkan data kosong.", "error");
-            }
+                const { data: dataLokasi } = await supabaseApp.from('lokasi').select('*');
+                if(dataLokasi) MOCK_LOCATIONS = dataLokasi.map(l => {
+                    let fallbackImg = 'https://placehold.co/800x400/e2e8f0/64748b?text=Lokasi';
+                    return { id: l.id, name: l.nama, type: l.jenis || 'Fieldtrip', area: l.area || '', price: l.harga || '', needs: l.needs || [], img: l.gambar || fallbackImg, desc: l.deskripsi || l.area || '', amen: l.fasilitas || [], cp: l.kontak || '', nama_univ: l.nama_univ, fakultas: l.fakultas, jurusan: l.jurusan };
+                });
+            } catch (err) { console.error(err); }
         }
 
-        // Init diubah menjadi async function agar menunggu fetch selesai
+        let activeKatalogTab = 'Lokasi';
+
         async function initDashboard() {
             showToast("Sinkronisasi data dari server...", "info");
-            
-            await fetchMasterData(); // <- Tunggu data Supabase masuk dulu
-            
+            await fetchMasterData(); 
             renderInformation();
             renderLocations();
+            renderKatalog(activeKatalogTab);
             renderHistory();
             renderStudents();
             renderTeachers();
             loadLokasiKonsumsi();
+        }
+
+        function setKatalogFilter(type) {
+            activeKatalogTab = type;
+            ['Lokasi', 'Bus', 'Konsumsi'].forEach(t => {
+                const btn = document.getElementById(`btn-kat-${t}`);
+                if(t === type) { btn.className = "flex-1 lg:flex-none active whitespace-nowrap px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 bg-aw-navy text-white shadow-md"; } 
+                else { btn.className = "flex-1 lg:flex-none whitespace-nowrap px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 bg-transparent text-slate-500 hover:bg-white hover:shadow-sm"; }
+            });
+            renderKatalog(type);
+        }
+
+        function renderKatalog(type) {
+            const grid = document.getElementById('katalog-grid');
+            let html = '';
+            
+            if (type === 'Lokasi') {
+                if(MOCK_LOCATIONS.length === 0) { grid.innerHTML = `<div class="col-span-full py-10 text-center italic text-slate-500">Belum ada data Lokasi.</div>`; return; }
+                MOCK_LOCATIONS.forEach(loc => {
+                    let tagsHtml = loc.amen.slice(0,3).map(a => `<span class="bg-slate-50 text-slate-500 text-[10px] font-bold px-2 py-1 rounded border border-slate-200">${a}</span>`).join('');
+                    html += `
+                    <div class="glass-card flex flex-col overflow-hidden group">
+                        <div class="relative h-48 w-full overflow-hidden bg-slate-200">
+                            <img src="${loc.img}" class="loc-card-img w-full h-full object-cover">
+                            <div class="absolute top-3 left-3 z-20 bg-aw-navy text-white px-3 py-1 rounded-lg text-[10px] font-black shadow-md uppercase tracking-wider">${loc.type}</div>
+                            <div class="absolute top-3 right-3 z-20 flex gap-2">
+                                <button onclick="editKatalogItem('lokasi', ${loc.id})" class="w-8 h-8 bg-white/90 hover:bg-aw-blue hover:text-white text-aw-blue rounded-full shadow-md transition-colors flex items-center justify-center backdrop-blur-sm"><i class="fa-solid fa-pen text-xs"></i></button>
+                                <button onclick="deleteMasterData('lokasi', ${loc.id})" class="w-8 h-8 bg-white/90 hover:bg-red-500 hover:text-white text-red-500 rounded-full shadow-md transition-colors flex items-center justify-center backdrop-blur-sm"><i class="fa-solid fa-trash text-xs"></i></button>
+                            </div>
+                        </div>
+                        <div class="p-5 flex-1 flex flex-col bg-white/50">
+                            <h3 class="text-lg font-black text-slate-800 leading-tight mb-1">${loc.name}</h3>
+                            <p class="text-xs font-bold text-slate-500 mb-3"><i class="fa-solid fa-location-dot"></i> ${loc.area}</p>
+                            <div class="flex flex-wrap gap-1.5 mb-3">${tagsHtml}</div>
+                            <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-200/60">
+                                <span class="text-sm font-black text-slate-700">${loc.price}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            } else if (type === 'Bus') {
+                if(MOCK_BUS.length === 0) { grid.innerHTML = `<div class="col-span-full py-10 text-center italic text-slate-500">Belum ada data Bus.</div>`; return; }
+                MOCK_BUS.forEach(b => {
+                    let imgSrc = b.img ? b.img : 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Image';
+                    html += `
+                    <div class="rounded-xl border-2 border-slate-200 p-4 bg-white transition-all shadow-sm flex flex-col group relative">
+                        <div class="absolute top-6 right-6 z-20 flex gap-2">
+                            <button onclick="editKatalogItem('bus', ${b.id})" class="w-8 h-8 bg-white/90 hover:bg-aw-blue hover:text-white text-aw-blue rounded-full shadow-md transition-colors flex items-center justify-center"><i class="fa-solid fa-pen text-xs"></i></button>
+                            <button onclick="deleteMasterData('vendor_bus', ${b.id})" class="w-8 h-8 bg-white/90 hover:bg-red-500 hover:text-white text-red-500 rounded-full shadow-md transition-colors flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
+                        <img src="${imgSrc}" class="w-full h-32 object-cover rounded-lg mb-4 shadow-sm group-hover:scale-105 transition-transform">
+                        <h4 class="font-bold text-slate-800 text-base mb-1">${b.name}</h4>
+                        <p class="text-xs text-slate-500 mb-2"><i class="fa-solid fa-phone mr-1"></i> ${b.cp}</p>
+                        <p class="text-sm font-black text-aw-blue mt-auto border-t border-slate-100 pt-3">Rp ${b.price.toLocaleString('id-ID')} <span class="text-[10px] font-medium text-slate-500">/ hari</span></p>
+                    </div>`;
+                });
+            } else if (type === 'Konsumsi') {
+                if(MOCK_CATERING.length === 0) { grid.innerHTML = `<div class="col-span-full py-10 text-center italic text-slate-500">Belum ada data Konsumsi.</div>`; return; }
+                MOCK_CATERING.forEach(c => {
+                    let imgArray = c.img ? c.img.split(',') : ['https://placehold.co/600x400/ffedd5/ea580c?text=No+Menu'];
+                    let imagesHtml = '<div class="flex gap-2 overflow-x-auto hide-scrollbar mb-4 rounded-lg">';
+                    imgArray.forEach(url => { imagesHtml += `<img src="${url.trim()}" class="w-[85%] shrink-0 h-32 object-cover rounded-lg shadow-sm">`; });
+                    imagesHtml += '</div>';
+
+                    html += `
+                    <div class="rounded-xl border-2 border-slate-200 p-4 bg-white transition-all shadow-sm flex flex-col group relative">
+                        <div class="absolute top-6 right-6 z-20 flex gap-2">
+                            <button onclick="editKatalogItem('konsumsi', ${c.id})" class="w-8 h-8 bg-white/90 hover:bg-aw-blue hover:text-white text-aw-blue rounded-full shadow-md transition-colors flex items-center justify-center backdrop-blur-sm"><i class="fa-solid fa-pen text-xs"></i></button>
+                            <button onclick="deleteMasterData('vendor_catering', ${c.id})" class="w-8 h-8 bg-white/90 hover:bg-red-500 hover:text-white text-red-500 rounded-full shadow-md transition-colors flex items-center justify-center backdrop-blur-sm"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
+                        ${imagesHtml}
+                        <h4 class="font-bold text-slate-800 text-base mb-1">${c.name}</h4>
+                        <p class="text-xs text-slate-500 mb-2"><i class="fa-solid fa-phone mr-1"></i> ${c.cp}</p>
+                        <p class="text-sm font-black text-orange-600 mt-auto border-t border-slate-100 pt-3">Rp ${c.price.toLocaleString('id-ID')} <span class="text-[10px] font-medium text-slate-500">/ pax</span></p>
+                    </div>`;
+                });
+            }
+            grid.innerHTML = html;
+        }
+
+        function editKatalogItem(type, id) {
+            if (type === 'lokasi') {
+                const loc = MOCK_LOCATIONS.find(l => l.id === id);
+                if (!loc) return;
+                switchTab('db-lokasi');
+                document.getElementById('edit-lokasi-id').value = id;
+                document.getElementById('inp-lokasi-type').value = loc.type;
+                toggleLokasiForm(); // Trigger form mode
+                
+                if (loc.type === 'Fieldtrip') {
+                    document.getElementById('loc-name-ft').value = loc.name;
+                    document.getElementById('loc-price-ft').value = loc.price;
+                    document.getElementById('loc-addr-ft').value = loc.area;
+                    document.getElementById('loc-cp-ft').value = loc.cp;
+                    document.getElementById('loc-amen-ft').value = loc.amen.join(', ');
+                } else if (loc.type === 'Outing Class') {
+                    document.getElementById('loc-name-out').value = loc.name;
+                    document.getElementById('loc-price-out').value = loc.price;
+                    document.getElementById('loc-addr-out').value = loc.area;
+                    document.getElementById('loc-cp-out').value = loc.cp;
+                    document.getElementById('loc-amen-out').value = loc.amen.join(', ');
+                } else {
+                    document.getElementById('loc-name-gtc').value = loc.nama_univ || '';
+                    document.getElementById('loc-fak-gtc').value = loc.fakultas || '';
+                    document.getElementById('loc-jur-gtc').value = loc.jurusan || '';
+                    document.getElementById('loc-addr-gtc').value = loc.area;
+                    document.getElementById('loc-cp-gtc').value = loc.cp;
+                }
+                
+                document.getElementById('need-bus').checked = loc.needs.includes('Bus');
+                document.getElementById('need-cat').checked = loc.needs.includes('Catering');
+                document.getElementById('btn-submit-lokasi').innerHTML = '<i class="fa-solid fa-save"></i> Update Lokasi';
+                showToast('Mode Edit Lokasi. Silakan ubah data pada form.', 'info');
+
+            } else if (type === 'bus') {
+                const b = MOCK_BUS.find(item => item.id === id);
+                if(!b) return;
+                switchTab('db-bus');
+                document.getElementById('edit-bus-id').value = id;
+                document.getElementById('inp-bus-name').value = b.name;
+                document.getElementById('inp-bus-cp').value = b.cp;
+                document.getElementById('inp-bus-price').value = b.price;
+                document.getElementById('btn-submit-bus').innerHTML = '<i class="fa-solid fa-save"></i> Update Vendor Bus';
+                showToast('Mode Edit Bus. Silakan ubah data pada form.', 'info');
+
+            } else if (type === 'konsumsi') {
+                const c = MOCK_CATERING.find(item => item.id === id);
+                if(!c) return;
+                switchTab('db-konsumsi');
+                document.getElementById('edit-cat-id').value = id;
+                document.getElementById('inp-cat-name').value = c.name;
+                document.getElementById('inp-konsumsi-lokasi').value = c.locId || 'general';
+                document.getElementById('inp-cat-price').value = c.price;
+                document.getElementById('inp-cat-cp').value = c.cp;
+                document.getElementById('btn-submit-konsumsi').innerHTML = '<i class="fa-solid fa-save"></i> Update Catering';
+                showToast('Mode Edit Catering. Silakan ubah data pada form.', 'info');
+            }
         }
 
         function renderInformation() {
@@ -1814,8 +1942,13 @@ async function uploadImageToSupabase(file) {
                 // Refresh data dari server agar tabel di layar update otomatis
                 await fetchMasterData();
                 if(table === 'siswa') renderStudents();
-                if(table === 'guru') renderTeachers();
-                // (Tabel lain menyusul di Diff berikutnya)
+                else if(table === 'guru') renderTeachers();
+                else {
+                    renderLocations();
+                    renderBusCatalog();
+                    renderCateringCatalog();
+                    if(typeof renderKatalog === 'function') renderKatalog(activeKatalogTab);
+                }
             } catch (err) {
                 console.error("Gagal hapus:", err);
                 showToast("Gagal menghapus data.", "error");
@@ -2033,48 +2166,45 @@ async function uploadImageToSupabase(file) {
             if(document.getElementById('need-cat').checked) needsArray.push('Catering');
 
             try {
-                // 3. Upload Foto jika ada
                 let imgUrl = null;
                 if (fileInp.files.length > 0) {
                     showToast('Sedang mengunggah foto lokasi...', 'info');
                     imgUrl = await uploadImageToSupabase(fileInp.files[0]);
                 }
 
-                // 4. Ubah string fasilitas dipisah koma menjadi Array murni
                 let fasArray = fasilitas.split(',').map(item => item.trim()).filter(i => i);
-
-                // 5. Susun Payload
                 const payload = {
-                    nama: namaUtama,
-                    jenis: type,
-                    harga: harga,
-                    area: areaLoc,
-                    kontak: cp,
-                    deskripsi: fasilitas, // Teks utuh
-                    fasilitas: fasArray,  // Format array untuk badge
-                    needs: needsArray,
-                    gambar: imgUrl,
-                    nama_univ: univ,
-                    fakultas: fak,
-                    jurusan: jur
+                    nama: namaUtama, jenis: type, harga: harga, area: areaLoc,
+                    kontak: cp, deskripsi: fasilitas, fasilitas: fasArray, needs: needsArray,
+                    nama_univ: univ, fakultas: fak, jurusan: jur
                 };
+                if(imgUrl) payload.gambar = imgUrl; // Jangan timpa gambar kalau gak upload baru
 
-                // 6. Simpan ke Database
-                const { error } = await supabaseApp.from('lokasi').insert([payload]);
-                if (error) throw error;
+                const editId = document.getElementById('edit-lokasi-id').value;
+                if (editId) {
+                    const { error } = await supabaseApp.from('lokasi').update(payload).eq('id', editId);
+                    if (error) throw error;
+                    showToast(`Data Lokasi berhasil diupdate!`, 'success');
+                } else {
+                    const { error } = await supabaseApp.from('lokasi').insert([payload]);
+                    if (error) throw error;
+                    showToast(`Data Lokasi berhasil ditambahkan ke Katalog!`, 'success');
+                }
 
-                showToast(`Data Lokasi berhasil ditambahkan ke Katalog!`, 'success');
                 e.target.reset();
+                document.getElementById('edit-lokasi-id').value = '';
                 document.getElementById('name-lokasi-img').innerText = 'Format: JPG, PNG, WEBP (Max 2MB)';
                 document.getElementById('name-lokasi-img').classList.remove('text-aw-blue', 'font-bold');
+                document.getElementById('btn-submit-lokasi').innerHTML = '<i class="fa-solid fa-save"></i> Simpan Lokasi';
                 
-                await fetchMasterData(); // Segarkan data agar update
-                renderLocations(); // Update UI
+                await fetchMasterData(); 
+                renderLocations(); 
+                renderKatalog('Lokasi');
+                setTimeout(() => switchTab('katalog'), 500); // Balik ke tab katalog otomatis
             } catch (err) {
                 console.error(err);
                 showToast("Gagal menyimpan data lokasi.", "error");
             } finally {
-                btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Lokasi`; 
                 btn.disabled = false;
             }
         }
@@ -2091,31 +2221,41 @@ async function uploadImageToSupabase(file) {
             
             try {
                 let imgUrl = null;
-                // Cek apakah ada file foto yang dipilih
                 if (fileInp.files.length > 0) {
                     showToast('Sedang mengunggah foto armada...', 'info');
                     imgUrl = await uploadImageToSupabase(fileInp.files[0]);
                 }
 
-                const { error } = await supabaseApp.from('vendor_bus').insert([
-                    { nama: namaInp, kontak: cpInp, harga: parseInt(hargaInp), gambar: imgUrl }
-                ]);
-                if (error) throw error;
+                const payload = { nama: namaInp, kontak: cpInp, harga: parseInt(hargaInp) };
+                if (imgUrl) payload.gambar = imgUrl; // Hanya overwrite gambar jika upload file baru
 
-                showToast('Data Vendor Bus berhasil disimpan!', 'success');
+                const editId = document.getElementById('edit-bus-id').value;
+                if (editId) {
+                    const { error } = await supabaseApp.from('vendor_bus').update(payload).eq('id', editId);
+                    if (error) throw error;
+                    showToast('Data Vendor Bus berhasil diupdate!', 'success');
+                } else {
+                    const { error } = await supabaseApp.from('vendor_bus').insert([payload]);
+                    if (error) throw error;
+                    showToast('Data Vendor Bus berhasil disimpan!', 'success');
+                }
+
                 e.target.reset();
+                document.getElementById('edit-bus-id').value = '';
                 document.getElementById('name-bus-img').innerText = 'Format: JPG, PNG, WEBP (Max 2MB)';
                 document.getElementById('name-bus-img').classList.remove('text-aw-blue', 'font-bold');
+                document.getElementById('btn-submit-bus').innerHTML = '<i class="fa-solid fa-save"></i> Simpan Vendor Bus';
                 
-                await fetchMasterData(); // Segarkan data
-                renderBusCatalog(); // Update katalog di Wizard
+                await fetchMasterData(); 
+                renderBusCatalog(); 
+                renderKatalog('Bus');
+                setTimeout(() => switchTab('katalog'), 500); // Balik ke tab katalog otomatis
             } catch (err) {
                 console.error(err);
                 showToast("Gagal menyimpan data Vendor Bus.", "error");
             } finally {
-                btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Vendor Bus`; btn.disabled = false;
+                btn.disabled = false;
             }
-        }
 
         let konsumsiSlotCount = 3;
         function loadLokasiKonsumsi() {
@@ -2148,9 +2288,8 @@ async function uploadImageToSupabase(file) {
 
             btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
             
-            try {
+           try {
                 let imgUrlsArray = [];
-                // Looping sebanyak jumlah slot gambar yang ada
                 for (let i = 1; i <= konsumsiSlotCount; i++) {
                     const currentFileInp = document.getElementById(`upload-konsumsi-img-${i}`);
                     if (currentFileInp && currentFileInp.files.length > 0) {
@@ -2159,38 +2298,40 @@ async function uploadImageToSupabase(file) {
                         if (uploadedUrl) imgUrlsArray.push(uploadedUrl);
                     }
                 }
-                
-                // Gabungkan semua URL dengan tanda koma (jika ada isinya)
                 const finalGambarStr = imgUrlsArray.length > 0 ? imgUrlsArray.join(',') : null;
 
-                let payload = { 
-                    nama: namaInp, 
-                    kontak: cpInp, 
-                    harga: parseInt(hargaInp), 
-                    gambar: finalGambarStr // Masukkan string panjang yang sudah digabung
-                };
-                
-                if (locInp && locInp !== "general") {
-                    payload.lokasi_id = parseInt(locInp);
+                let payload = { nama: namaInp, kontak: cpInp, harga: parseInt(hargaInp) };
+                if (locInp && locInp !== "general") payload.lokasi_id = parseInt(locInp);
+                if (finalGambarStr) payload.gambar = finalGambarStr;
+
+                const editId = document.getElementById('edit-cat-id').value;
+                if (editId) {
+                    const { error } = await supabaseApp.from('vendor_catering').update(payload).eq('id', editId);
+                    if (error) throw error;
+                    showToast('Data Vendor Catering berhasil diupdate!', 'success');
+                } else {
+                    const { error } = await supabaseApp.from('vendor_catering').insert([payload]);
+                    if (error) throw error;
+                    showToast('Data Vendor Catering berhasil disimpan!', 'success');
                 }
 
-                const { error } = await supabaseApp.from('vendor_catering').insert([payload]);
-                if (error) throw error;
-
-                showToast('Data Vendor Catering/Konsumsi berhasil disimpan!', 'success');
                 e.target.reset();
+                document.getElementById('edit-cat-id').value = '';
                 for(let i = 1; i <= konsumsiSlotCount; i++) {
                     const nameEl = document.getElementById(`name-konsumsi-img-${i}`);
                     if(nameEl) { nameEl.innerText = `Gambar ${i}`; nameEl.classList.remove('text-aw-blue', 'font-bold'); }
                 }
+                document.getElementById('btn-submit-konsumsi').innerHTML = '<i class="fa-solid fa-save"></i> Simpan Vendor Catering';
                 
-                await fetchMasterData(); // Segarkan data
-                renderCateringCatalog(); // Update UI Katalog
+                await fetchMasterData(); 
+                renderCateringCatalog(); 
+                renderKatalog('Konsumsi');
+                setTimeout(() => switchTab('katalog'), 500); // Balik ke tab katalog
             } catch (err) {
                 console.error(err);
                 showToast("Gagal menyimpan data Catering.", "error");
             } finally {
-                btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Vendor Catering`; btn.disabled = false;
+                btn.disabled = false;
             }
         }
         function getNeedsBadgesHtml(needsArray) {
