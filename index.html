@@ -1365,114 +1365,65 @@
 
     <script>
         // ==========================================
+        // SUPABASE INITIALIZATION
         // ==========================================
-// SUPABASE INITIALIZATION
-// ==========================================
-const { createClient } = supabase;
-const supabaseUrl = 'https://jbmzofqwqxwvtdahkmid.supabase.co'; 
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpibXpvZnF3cXh3dnRkYWhrbWlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3Njc4ODksImV4cCI6MjEwNjM0Mzg4OX0.SI5v3deR98o_8OnxiRLVwlrko9yCKYuzZMszkgjQrWo';
+        const { createClient } = supabase;
+        const supabaseUrl = 'https://jbmzofqwqxwvtdahkmid.supabase.co'; 
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpibXpvZnF3cXh3dnRkYWhrbWlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3Njc4ODksImV4cCI6MjEwNjM0Mzg4OX0.SI5v3deR98o_8OnxiRLVwlrko9yCKYuzZMszkgjQrWo';
 
-const supabaseApp = createClient(supabaseUrl, supabaseKey, {
-    auth: { persistSession: false }
-});
+        const supabaseApp = createClient(supabaseUrl, supabaseKey, {
+            auth: { persistSession: false }
+        });
 
-// Fungsi pembantu untuk upload file ke Bucket 'gambar'
-async function uploadImageToSupabase(file) {
-    if (!file) return null;
-    // Bikin nama file unik pakai timestamp biar nggak bentrok
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-    
-    // Upload ke bucket 'gambar'
-    const { data, error } = await supabaseApp.storage.from('gambar').upload(fileName, file);
-    if (error) throw error;
+        // Fungsi pembantu untuk upload file ke Bucket 'gambar'
+        async function uploadImageToSupabase(file) {
+            if (!file) return null;
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+            
+            const { data, error } = await supabaseApp.storage.from('gambar').upload(fileName, file);
+            if (error) throw error;
 
-    // Ambil URL Publik dari gambar yang baru diupload
-    const { data: publicUrlData } = supabaseApp.storage.from('gambar').getPublicUrl(fileName);
-    return publicUrlData.publicUrl;
-}
+            const { data: publicUrlData } = supabaseApp.storage.from('gambar').getPublicUrl(fileName);
+            return publicUrlData.publicUrl;
+        }
 
-        
         // ==========================================
-        // MOCK DATA & CONSTANTS
+        // MOCK DATA & CONSTANTS (Data Dummy Sisa)
         // ==========================================
-        let MOCK_LOCATIONS = [
-            { 
-                id: 1, name: 'Taman Bunga Nusantara', type: 'Fieldtrip', area: 'Cianjur, Jawa Barat', price: 'Rp 65.000 / tiket',
-                needs: ['Bus'],
-                img: 'https://images.unsplash.com/photo-1585320806297-9794b3e4ce18?auto=format&fit=crop&w=800&q=80', 
-                desc: 'Taman bunga terluas dengan berbagai area tematik. Sangat cocok untuk outing class biologi. Parkir bus sangat luas dan bisa menampung hingga 50 bus besar secara bersamaan.', 
-                amen: ['Area Terbuka', 'Parkir Bus Luas', 'Aman Anak'],
-                cp: 'Pak Budi (08123456789)'
-            },
-            { 
-                id: 2, name: 'Museum Geologi', type: 'Outing Class', area: 'Bandung, Jawa Barat', price: 'Rp 10.000 / tiket',
-                needs: ['Bus'],
-                img: 'https://images.unsplash.com/photo-1584852934272-b7b5177ea14f?auto=format&fit=crop&w=800&q=80', 
-                desc: 'Koleksi fosil komprehensif. Catatan: Parkir bus di lokasi sangat terbatas karena berada di tengah kota, disarankan koordinasi awal dengan pihak keamanan.', 
-                amen: ['Edukasi Fosil', 'Pemandu', 'Indoor AC'],
-                cp: 'Ibu Ratna (08112233445)'
-            },
-            { 
-                id: 3, name: 'Universitas Indonesia (UI)', type: 'Goes to Campus', area: 'Depok, Jawa Barat', price: 'Kontak Humas',
-                needs: ['Bus', 'Catering'],
-                img: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=800&q=80', 
-                desc: 'Kunjungan pengenalan kampus tingkat SMA. Harus sedia Catering box karena memobilisasi ratusan siswa ke kantin sangat lama dan berpotensi terpencar.', 
-                amen: ['Balairung', 'Tur Kampus', 'Masjid UI', 'Perpusat'],
-                cp: 'Humas UI (021-1234567)'
-            }
-        ];
-
-        // Data ini sekarang dikosongkan dan akan diisi secara dinamis dari Supabase
+        let MOCK_LOCATIONS = [];
         let MOCK_STUDENTS = [];
         let MOCK_GURU = [];
         let MOCK_BUS = [];
         let MOCK_CATERING = [];
+        let GLOBAL_EVENTS = [];
+        let MY_PLANNING = [];
 
         const MOCK_REPORTS = [
-            {
-                id: 'rep-1', type: 'Fieldtrip', name: 'Sains SD (Selesai)', loc: 'Taman Bunga Nusantara', date: '2026-08-15',
-                attPct: 95, absentList: '1. Ahmad (Sakit)\n2. Budi (Izin)',
-                busCount: 4, costTicket: 65000, costFood: 35000, costTrans: 2500000, totalPax: 120,
-                ratingBus: 4, ratingFood: 5, ratingTrans: 4
-            },
-            {
-                id: 'rep-2', type: 'Outing Class', name: 'Observasi Museum', loc: 'Museum Geologi', date: '2026-03-02',
-                attPct: 98, absentList: '1. Rina (Sakit)',
-                busCount: 2, costTicket: 10000, costFood: 30000, costTrans: 2800000, totalPax: 80,
-                ratingBus: 5, ratingFood: 4, ratingTrans: 3
-            }
+            { id: 'rep-1', type: 'Fieldtrip', name: 'Sains SD (Selesai)', loc: 'Taman Bunga Nusantara', date: '2026-08-15', attPct: 95, absentList: '1. Ahmad (Sakit)\n2. Budi (Izin)', busCount: 4, costTicket: 65000, costFood: 35000, costTrans: 2500000, totalPax: 120, ratingBus: 4, ratingFood: 5, ratingTrans: 4 },
+            { id: 'rep-2', type: 'Outing Class', name: 'Observasi Museum', loc: 'Museum Geologi', date: '2026-03-02', attPct: 98, absentList: '1. Rina (Sakit)', busCount: 2, costTicket: 10000, costFood: 30000, costTrans: 2800000, totalPax: 80, ratingBus: 5, ratingFood: 4, ratingTrans: 3 }
+        ];
+
+        let MY_HISTORY = [
+            { id: 101, locId: 2, date: '2026-03-02', event: 'Outing Sejarah Kelas 8', isReviewed: true },
+            { id: 102, locId: 1, date: '2026-08-15', event: 'Sains SD (Selesai)', isReviewed: true },
+            { id: 103, locId: 3, date: '2026-09-25', event: 'UI Kunjungan Kelas 12', isReviewed: false } 
         ];
 
         const EVENT_COLORS = { 'Fieldtrip': '#2563eb', 'Outing Class': '#10b981', 'Goes to Campus': '#fbbf24' };
-
-        // Variabel untuk menampung instansi kalender agar bisa dipakai global
+        const TODAY = '2026-09-30'; 
+        
         let mainCalendar = null;
         let miniCalendar = null;
         let activeFilter = 'Semua';
         let activeLocation = null;
         let wizardStep = 1;
         let wizData = { date: null, timeStart: '07:00', timeEnd: '15:00', totalPax: 0, busVendor: null, busUnit: 0, catVendor: null, catPax: 0 };
-        const TODAY = '2026-09-30'; // Asumsi hari ini untuk pengecekan notif evaluasi
-        let sessionCabang = null; // Menyimpan data cabang yang sedang login
+        let sessionCabang = null; 
 
-        let GLOBAL_EVENTS = [
-            { id: 'ev1', title: 'Fieldtrip - C2', start: '2026-09-18', color: EVENT_COLORS['Fieldtrip'], extendedProps: { branch: 'Cabang 2', locId: 1, loc: 'Taman Bunga Nusantara', busId: 1, busUnit: 3, catId: 3 } },
-            { id: 'ev2', title: 'Outing Class - C4', start: '2026-09-22', color: EVENT_COLORS['Outing Class'], extendedProps: { branch: 'Cabang 4', locId: 2, loc: 'Museum Geologi', busId: 2, busUnit: 2, catId: null } },
-            { id: 'ev3', title: 'Goes to Campus - C1', start: '2026-09-28', color: EVENT_COLORS['Goes to Campus'], extendedProps: { branch: 'Cabang 1', locId: 3, loc: 'Universitas Indonesia', busId: 2, busUnit: 4, catId: 2 } },
-            { id: 'ev4', title: 'Fieldtrip - C12', start: '2026-09-30', color: EVENT_COLORS['Fieldtrip'], extendedProps: { branch: 'Cabang 12', locId: 1, loc: 'Taman Bunga Nusantara', busId: 1, busUnit: 5, catId: 3 } }
-        ];
-
-        let MY_PLANNING = [
-            { id: 'ev-c15-1', title: 'Goes to Campus - C15', type: 'Goes to Campus', start: '2026-10-05', color: EVENT_COLORS['Goes to Campus'], extendedProps: { branch: 'Cabang 15 Bekasi', locId: 3, loc: 'Universitas Indonesia', timeStart: '06:00', timeEnd: '15:00', pax: 150, busVendorId: 2, busUnit: 4, catVendorId: 2, catPax: 155 } }
-        ];
-
-        let MY_HISTORY = [
-            { id: 101, locId: 2, date: '2026-03-02', event: 'Outing Sejarah Kelas 8', isReviewed: true },
-            { id: 102, locId: 1, date: '2026-08-15', event: 'Sains SD (Selesai)', isReviewed: true },
-            { id: 103, locId: 3, date: '2026-09-25', event: 'UI Kunjungan Kelas 12', isReviewed: false } // Sengaja belum direview + tgl sudah lewat untuk test notif
-        ];
-
+        // ==========================================
+        // UI HELPERS (Toast & Modal)
+        // ==========================================
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -1506,70 +1457,6 @@ async function uploadImageToSupabase(file) {
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
 
-        async function handleLogin(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btn-login');
-            const userInp = document.getElementById('inp-username').value;
-            const passInp = document.getElementById('inp-password').value;
-            
-            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
-
-            try {
-                // Tembak data ke Supabase tabel akun_cabang
-                const { data, error } = await supabaseApp
-                    .from('akun_cabang')
-                    .select('*')
-                    .eq('username', userInp)
-                    .eq('password', passInp)
-                    .single();
-
-                if (error || !data) throw new Error('Username atau password salah!');
-
-                // Simpan data ke variabel global agar bisa dipakai di menu lain
-                sessionCabang = data;
-
-                // Update UI Teks Nama Cabang di Sidebar & Header Mobile secara dinamis
-                const namaKota = data.nama_cabang.split(' ').slice(2).join(' '); // Ambil kata setelah "Cabang XX"
-                document.querySelectorAll('.w-9.h-9.rounded-full.bg-aw-yellow').forEach(el => el.innerText = data.kode_cabang);
-                document.querySelectorAll('.truncate.w-32.text-white').forEach(el => el.innerText = data.nama_cabang.replace(' ' + namaKota, ''));
-                document.querySelectorAll('.text-\\[10px\\].text-blue-300.uppercase').forEach(el => el.innerText = namaKota);
-                document.querySelectorAll('.text-\\[9px\\].font-bold.text-slate-500.uppercase').forEach(el => el.innerText = `${data.kode_cabang} ${namaKota}`);
-
-                document.getElementById('view-login').classList.add('opacity-0');
-                setTimeout(() => {
-                    document.getElementById('view-login').classList.add('hidden');
-                    const viewApp = document.getElementById('view-app');
-                    viewApp.classList.remove('hidden');
-                    setTimeout(()=> viewApp.classList.remove('opacity-0'), 50);
-
-                    showToast(`Login berhasil! Selamat datang Tim ${data.nama_cabang}.`, 'success');
-                    initDashboard(); // Render dashboard setelah punya sessionCabang
-                }, 600);
-
-            } catch (err) {
-                showToast(err.message, 'error');
-                btn.innerHTML = `<span>Masuk Sistem</span> <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>`; 
-                btn.disabled = false;
-            }
-        }
-
-        function handleLogout() {
-            sessionCabang = null; // Hapus sesi
-            const viewApp = document.getElementById('view-app');
-            viewApp.classList.add('opacity-0');
-            setTimeout(() => {
-                viewApp.classList.add('hidden');
-                document.getElementById('view-login').classList.remove('hidden');
-                setTimeout(() => document.getElementById('view-login').classList.remove('opacity-0'), 50);
-                
-                document.getElementById('login-form').reset();
-                document.getElementById('btn-login').innerHTML = `<span>Masuk Sistem</span> <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>`;
-                document.getElementById('btn-login').disabled = false;
-                switchTab('information'); 
-            }, 400);
-        }
-
-        // Fungsi narik data dari Supabase
         function switchTab(tabId) {
             const tabs = ['information', 'booking', 'katalog', 'calendar', 'history', 'db-siswa', 'db-guru', 'db-lokasi', 'db-bus', 'db-konsumsi', 'arsip'];
             tabs.forEach(t => {
@@ -1596,17 +1483,68 @@ async function uploadImageToSupabase(file) {
             if (tabId === 'calendar') { setTimeout(() => { initMainCalendar(); }, 100); }
         }
 
-        function syncEventsToGlobal() {
-            GLOBAL_EVENTS = GLOBAL_EVENTS.filter(ev => ev.extendedProps.branch !== 'Cabang 15 Bekasi');
-            GLOBAL_EVENTS = [...GLOBAL_EVENTS, ...MY_PLANNING];
-            if(mainCalendar) { mainCalendar.removeAllEvents(); mainCalendar.addEventSource(GLOBAL_EVENTS); }
+        // ==========================================
+        // AUTHENTICATION LOGIC
+        // ==========================================
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-login');
+            const userInp = document.getElementById('inp-username').value;
+            const passInp = document.getElementById('inp-password').value;
+            
+            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
+
+            try {
+                const { data, error } = await supabaseApp.from('akun_cabang').select('*').eq('username', userInp).eq('password', passInp).single();
+                if (error || !data) throw new Error('Username atau password salah!');
+
+                sessionCabang = data;
+
+                const namaKota = data.nama_cabang.split(' ').slice(2).join(' '); 
+                document.querySelectorAll('.w-9.h-9.rounded-full.bg-aw-yellow').forEach(el => el.innerText = data.kode_cabang);
+                document.querySelectorAll('.truncate.w-32.text-white').forEach(el => el.innerText = data.nama_cabang.replace(' ' + namaKota, ''));
+                document.querySelectorAll('.text-\\[10px\\].text-blue-300.uppercase').forEach(el => el.innerText = namaKota);
+                document.querySelectorAll('.text-\\[9px\\].font-bold.text-slate-500.uppercase').forEach(el => el.innerText = `${data.kode_cabang} ${namaKota}`);
+
+                document.getElementById('view-login').classList.add('opacity-0');
+                setTimeout(() => {
+                    document.getElementById('view-login').classList.add('hidden');
+                    const viewApp = document.getElementById('view-app');
+                    viewApp.classList.remove('hidden');
+                    setTimeout(()=> viewApp.classList.remove('opacity-0'), 50);
+
+                    showToast(`Login berhasil! Selamat datang Tim ${data.nama_cabang}.`, 'success');
+                    initDashboard(); 
+                }, 600);
+
+            } catch (err) {
+                showToast(err.message, 'error');
+                btn.innerHTML = `<span>Masuk Sistem</span> <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>`; 
+                btn.disabled = false;
+            }
         }
 
-        // MOCK_LOCATIONS fetch data logic has been established
-        // MOCK_LOCATIONS fetch data logic has been established
+        function handleLogout() {
+            sessionCabang = null; 
+            const viewApp = document.getElementById('view-app');
+            viewApp.classList.add('opacity-0');
+            setTimeout(() => {
+                viewApp.classList.add('hidden');
+                document.getElementById('view-login').classList.remove('hidden');
+                setTimeout(() => document.getElementById('view-login').classList.remove('opacity-0'), 50);
+                
+                document.getElementById('login-form').reset();
+                document.getElementById('btn-login').innerHTML = `<span>Masuk Sistem</span> <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>`;
+                document.getElementById('btn-login').disabled = false;
+                switchTab('information'); 
+            }, 400);
+        }
+
+        // ==========================================
+        // DATA FETCHING LOGIC (CORE SUPABASE)
+        // ==========================================
         async function fetchMasterData() {
             try {
-                // 0. Ambil Data Seluruh Cabang (Untuk mapping nama cabang di Kalender)
                 const { data: allCabang } = await supabaseApp.from('akun_cabang').select('id, nama_cabang, kode_cabang');
                 let mapCabang = {};
                 if(allCabang) allCabang.forEach(c => mapCabang[c.id] = c);
@@ -1629,7 +1567,7 @@ async function uploadImageToSupabase(file) {
                     return { id: l.id, name: l.nama, type: l.jenis || 'Fieldtrip', area: l.area || '', price: l.harga || '', needs: l.needs || [], img: l.gambar || fallbackImg, desc: l.deskripsi || l.area || '', amen: l.fasilitas || [], cp: l.kontak || '', nama_univ: l.nama_univ, fakultas: l.fakultas, jurusan: l.jurusan };
                 });
 
-                // 6. Tarik Data Transaksi Events (Booking)
+                // Fetch Transaksi Events
                 const { data: dataEvents } = await supabaseApp.from('events').select('*');
                 if(dataEvents) {
                     GLOBAL_EVENTS = [];
@@ -1663,7 +1601,6 @@ async function uploadImageToSupabase(file) {
                         GLOBAL_EVENTS.push(evObj);
                         if (isMyEvent) MY_PLANNING.push(evObj);
                     });
-                    // Urutkan jadwal kita berdasarkan tanggal terdekat
                     MY_PLANNING.sort((a,b) => new Date(a.start) - new Date(b.start));
                 }
             } catch (err) { console.error(err); }
@@ -1683,6 +1620,99 @@ async function uploadImageToSupabase(file) {
             loadLokasiKonsumsi();
         }
 
+        // ==========================================
+        // RENDER UI & DASHBOARD
+        // ==========================================
+        function renderInformation() {
+            document.getElementById('stat-siswa').innerText = MOCK_STUDENTS.length;
+            document.getElementById('stat-guru').innerText = MOCK_GURU.length;
+            document.getElementById('stat-bus').innerText = MOCK_BUS.length;
+            document.getElementById('stat-planning').innerText = MY_PLANNING.length;
+
+            const globalContainer = document.getElementById('dashboard-global-agenda');
+            let globalHtml = '';
+            const upcoming = GLOBAL_EVENTS.sort((a,b) => new Date(a.start) - new Date(b.start)).slice(0, 5);
+            
+            if(upcoming.length === 0) {
+                globalContainer.innerHTML = `<div class="bg-slate-50 border border-dashed border-slate-200 p-4 rounded-xl text-center"><p class="text-xs font-medium text-slate-500">Tidak ada agenda terdekat.</p></div>`;
+            } else {
+                upcoming.forEach(ag => {
+                    const dObj = new Date(ag.start);
+                    const day = String(dObj.getDate()).padStart(2, '0');
+                    const month = dObj.toLocaleString('id-ID', { month: 'short' }).toUpperCase();
+                    globalHtml += `
+                        <div class="glass-card p-4 flex items-center justify-between border border-slate-100 hover:border-aw-blue transition-colors group">
+                            <div class="flex items-center gap-4 w-full">
+                                <div class="w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border" style="color: ${ag.color}; background-color: ${ag.color}15; border-color: ${ag.color}30;">
+                                    <span class="text-[9px] font-bold uppercase -mb-1">${month}</span><span class="text-lg font-black">${day}</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="font-black text-slate-800 text-sm group-hover:text-aw-blue transition-colors truncate">${ag.title}</h4>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 truncate"><i class="fa-solid fa-location-dot text-slate-300 mr-1"></i> ${ag.extendedProps.loc}</p>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                globalContainer.innerHTML = globalHtml;
+            }
+
+            const planContainer = document.getElementById('planning-cards-container');
+            let planHtml = '';
+            if(MY_PLANNING.length === 0) {
+                planContainer.innerHTML = `<div class="col-span-full bg-slate-50 border border-dashed border-slate-200 p-8 rounded-2xl text-center"><p class="text-sm font-bold text-slate-500">Belum ada event planning mendatang.</p></div>`;
+            } else {
+                MY_PLANNING.forEach(plan => {
+                    let tags = '';
+                    if(plan.extendedProps.busUnit > 0) tags += `<span class="bg-blue-50 text-aw-blue px-2 py-1 rounded text-[10px] font-bold border border-blue-100"><i class="fa-solid fa-bus"></i> ${plan.extendedProps.busUnit} Bus</span>`;
+                    if(plan.extendedProps.catPax > 0) tags += `<span class="bg-orange-50 text-orange-600 px-2 py-1 rounded text-[10px] font-bold border border-orange-100"><i class="fa-solid fa-utensils"></i> ${plan.extendedProps.catPax} Pax</span>`;
+
+                    planHtml += `
+                        <div class="glass-card p-5 border-t-4 border-t-aw-yellow hover:-translate-y-1 transition-all cursor-pointer group" onclick="openEditBooking(${plan.id})">
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="text-[9px] font-black uppercase tracking-widest text-aw-yellow bg-yellow-50 px-2 py-1 rounded border border-yellow-100">${plan.type}</span>
+                                <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded"><i class="fa-regular fa-calendar text-aw-blue"></i> ${plan.start}</span>
+                            </div>
+                            <h4 class="font-black text-slate-800 text-lg mb-1 leading-tight group-hover:text-aw-blue transition-colors line-clamp-1">${plan.title}</h4>
+                            <p class="text-xs font-medium text-slate-500 mb-4 flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-slate-400"></i> ${plan.extendedProps.loc}</p>
+                            
+                            <div class="flex flex-wrap gap-2 mb-4">${tags}</div>
+                            
+                            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-500"><i class="fa-regular fa-clock"></i> ${plan.extendedProps.timeStart} - ${plan.extendedProps.timeEnd}</span>
+                                <button class="text-xs font-black text-indigo-500 hover:text-indigo-700 transition flex items-center gap-1"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                            </div>
+                        </div>`;
+                });
+                planContainer.innerHTML = planHtml;
+            }
+
+            const overviewContainer = document.getElementById('overview-report-cards');
+            let ovHtml = '';
+            MOCK_REPORTS.forEach(rep => {
+                let colorTheme = rep.type === 'Fieldtrip' ? 'aw-blue' : (rep.type === 'Outing Class' ? 'aw-green' : 'aw-yellow');
+                ovHtml += `
+                    <div class="glass-card p-5 border-t-4 border-t-${colorTheme} hover:-translate-y-1 transition-transform flex flex-col h-full cursor-pointer" onclick="openReportModal('${rep.id}')">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-[9px] font-black uppercase tracking-widest text-${colorTheme} bg-${colorTheme.replace('aw-', '')}-50 px-2 py-1 rounded border border-${colorTheme.replace('aw-', '')}-100">${rep.type}</span>
+                            <span class="text-[10px] font-bold text-slate-400"><i class="fa-regular fa-calendar"></i> ${rep.date}</span>
+                        </div>
+                        <h4 class="font-black text-slate-800 text-lg mb-1 leading-tight line-clamp-2">${rep.name}</h4>
+                        <p class="text-xs font-medium text-slate-500 mb-5 flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-slate-400"></i> ${rep.loc}</p>
+                        
+                        <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-xs font-bold text-slate-600">
+                                <div class="w-6 h-6 rounded bg-emerald-50 text-emerald-500 flex items-center justify-center"><i class="fa-solid fa-check"></i></div> Selesai
+                            </div>
+                            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 group-hover:text-aw-blue transition-colors">Lihat Analisis ➔</span>
+                        </div>
+                    </div>`;
+            });
+            overviewContainer.innerHTML = ovHtml;
+        }
+
+        // ==========================================
+        // KATALOG VIEW LOGIC
+        // ==========================================
         function setKatalogFilter(type) {
             activeKatalogTab = type;
             ['Lokasi', 'Bus', 'Konsumsi'].forEach(t => {
@@ -1768,7 +1798,7 @@ async function uploadImageToSupabase(file) {
                 switchTab('db-lokasi');
                 document.getElementById('edit-lokasi-id').value = id;
                 document.getElementById('inp-lokasi-type').value = loc.type;
-                toggleLokasiForm(); // Trigger form mode
+                toggleLokasiForm(); 
                 
                 if (loc.type === 'Fieldtrip') {
                     document.getElementById('loc-name-ft').value = loc.name;
@@ -1820,93 +1850,339 @@ async function uploadImageToSupabase(file) {
             }
         }
 
-        function renderInformation() {
-            document.getElementById('stat-siswa').innerText = MOCK_STUDENTS.length;
-            document.getElementById('stat-guru').innerText = MOCK_GURU.length;
-            document.getElementById('stat-bus').innerText = MOCK_BUS.length;
-            document.getElementById('stat-planning').innerText = MY_PLANNING.length;
-
-            const globalContainer = document.getElementById('dashboard-global-agenda');
-            let globalHtml = '';
-            const upcoming = GLOBAL_EVENTS.sort((a,b) => new Date(a.start) - new Date(b.start)).slice(0, 5);
-            
-            if(upcoming.length === 0) {
-                globalContainer.innerHTML = `<div class="bg-slate-50 border border-dashed border-slate-200 p-4 rounded-xl text-center"><p class="text-xs font-medium text-slate-500">Tidak ada agenda terdekat.</p></div>`;
-            } else {
-                upcoming.forEach(ag => {
-                    const dObj = new Date(ag.start);
-                    const day = String(dObj.getDate()).padStart(2, '0');
-                    const month = dObj.toLocaleString('id-ID', { month: 'short' }).toUpperCase();
-                    globalHtml += `
-                        <div class="glass-card p-4 flex items-center justify-between border border-slate-100 hover:border-aw-blue transition-colors group">
-                            <div class="flex items-center gap-4 w-full">
-                                <div class="w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border" style="color: ${ag.color}; background-color: ${ag.color}15; border-color: ${ag.color}30;">
-                                    <span class="text-[9px] font-bold uppercase -mb-1">${month}</span><span class="text-lg font-black">${day}</span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <h4 class="font-black text-slate-800 text-sm group-hover:text-aw-blue transition-colors truncate">${ag.title}</h4>
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 truncate"><i class="fa-solid fa-location-dot text-slate-300 mr-1"></i> ${ag.extendedProps.loc}</p>
-                                </div>
-                            </div>
-                        </div>`;
-                });
-                globalContainer.innerHTML = globalHtml;
+        // ==========================================
+        // DATABASE WRITE LOGIC (INSERT / UPDATE / DELETE)
+        // ==========================================
+        async function deleteMasterData(table, id) {
+            if(!confirm(`Yakin mau menghapus data ini dari database?`)) return;
+            showToast("Menghapus data...", "info");
+            try {
+                const { error } = await supabaseApp.from(table).delete().eq('id', id);
+                if(error) throw error;
+                
+                showToast("Data berhasil dihapus!", "success");
+                await fetchMasterData();
+                if(table === 'siswa') renderStudents();
+                else if(table === 'guru') renderTeachers();
+                else {
+                    renderLocations();
+                    renderBusCatalog();
+                    renderCateringCatalog();
+                    if(typeof renderKatalog === 'function') renderKatalog(activeKatalogTab);
+                }
+            } catch (err) {
+                console.error("Gagal hapus:", err);
+                showToast("Gagal menghapus data.", "error");
             }
-
-            const planContainer = document.getElementById('planning-cards-container');
-            let planHtml = '';
-            if(MY_PLANNING.length === 0) {
-                planContainer.innerHTML = `<div class="col-span-full bg-slate-50 border border-dashed border-slate-200 p-8 rounded-2xl text-center"><p class="text-sm font-bold text-slate-500">Belum ada event planning mendatang.</p></div>`;
-            } else {
-                MY_PLANNING.forEach(plan => {
-                    let tags = '';
-                    if(plan.extendedProps.busUnit > 0) tags += `<span class="bg-blue-50 text-aw-blue px-2 py-1 rounded text-[10px] font-bold border border-blue-100"><i class="fa-solid fa-bus"></i> ${plan.extendedProps.busUnit} Bus</span>`;
-                    if(plan.extendedProps.catPax > 0) tags += `<span class="bg-orange-50 text-orange-600 px-2 py-1 rounded text-[10px] font-bold border border-orange-100"><i class="fa-solid fa-utensils"></i> ${plan.extendedProps.catPax} Pax</span>`;
-
-                    planHtml += `
-                        <div class="glass-card p-5 border-t-4 border-t-aw-yellow hover:-translate-y-1 transition-all cursor-pointer group" onclick="openEditBooking('${plan.id}')">
-                            <div class="flex justify-between items-start mb-3">
-                                <span class="text-[9px] font-black uppercase tracking-widest text-aw-yellow bg-yellow-50 px-2 py-1 rounded border border-yellow-100">${plan.type}</span>
-                                <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded"><i class="fa-regular fa-calendar text-aw-blue"></i> ${plan.start}</span>
-                            </div>
-                            <h4 class="font-black text-slate-800 text-lg mb-1 leading-tight group-hover:text-aw-blue transition-colors line-clamp-1">${plan.title}</h4>
-                            <p class="text-xs font-medium text-slate-500 mb-4 flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-slate-400"></i> ${plan.extendedProps.loc}</p>
-                            
-                            <div class="flex flex-wrap gap-2 mb-4">${tags}</div>
-                            
-                            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                                <span class="text-xs font-bold text-slate-500"><i class="fa-regular fa-clock"></i> ${plan.extendedProps.timeStart} - ${plan.extendedProps.timeEnd}</span>
-                                <button class="text-xs font-black text-indigo-500 hover:text-indigo-700 transition flex items-center gap-1"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-                            </div>
-                        </div>`;
-                });
-                planContainer.innerHTML = planHtml;
-            }
-
-            const overviewContainer = document.getElementById('overview-report-cards');
-            let ovHtml = '';
-            MOCK_REPORTS.forEach(rep => {
-                let colorTheme = rep.type === 'Fieldtrip' ? 'aw-blue' : (rep.type === 'Outing Class' ? 'aw-green' : 'aw-yellow');
-                ovHtml += `
-                    <div class="glass-card p-5 border-t-4 border-t-${colorTheme} hover:-translate-y-1 transition-transform flex flex-col h-full cursor-pointer" onclick="openReportModal('${rep.id}')">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-[9px] font-black uppercase tracking-widest text-${colorTheme} bg-${colorTheme.replace('aw-', '')}-50 px-2 py-1 rounded border border-${colorTheme.replace('aw-', '')}-100">${rep.type}</span>
-                            <span class="text-[10px] font-bold text-slate-400"><i class="fa-regular fa-calendar"></i> ${rep.date}</span>
-                        </div>
-                        <h4 class="font-black text-slate-800 text-lg mb-1 leading-tight line-clamp-2">${rep.name}</h4>
-                        <p class="text-xs font-medium text-slate-500 mb-5 flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-slate-400"></i> ${rep.loc}</p>
-                        
-                        <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                            <div class="flex items-center gap-2 text-xs font-bold text-slate-600">
-                                <div class="w-6 h-6 rounded bg-emerald-50 text-emerald-500 flex items-center justify-center"><i class="fa-solid fa-check"></i></div> Selesai
-                            </div>
-                            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 group-hover:text-aw-blue transition-colors">Lihat Analisis ➔</span>
-                        </div>
-                    </div>`;
-            });
-            overviewContainer.innerHTML = ovHtml;
         }
 
+        async function submitNewSiswa(e) {
+            e.preventDefault();
+            const nameInp = document.getElementById('inp-new-siswa-name');
+            const jenjangInp = document.getElementById('inp-new-siswa-jenjang');
+            const classInp = document.getElementById('inp-new-siswa-class');
+            const btn = document.getElementById('btn-submit-siswa');
+
+            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
+
+            const cls = classInp.value.toUpperCase();
+            const properName = nameInp.value.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+
+            try {
+                const editId = document.getElementById('edit-siswa-id').value;
+                const payload = { cabang_id: sessionCabang.id, nama: properName, jenjang: jenjangInp.value, kelas: cls };
+                let errorObj = null;
+
+                if (editId) {
+                    const { error } = await supabaseApp.from('siswa').update(payload).eq('id', editId);
+                    errorObj = error;
+                } else {
+                    const { error } = await supabaseApp.from('siswa').insert([payload]);
+                    errorObj = error;
+                }
+                if (errorObj) throw errorObj;
+
+                const filterDropdown = document.getElementById('filter-kelas-siswa');
+                let exists = false;
+                for (let i = 0; i < filterDropdown.options.length; i++) { if (filterDropdown.options[i].value === cls) { exists = true; break; } }
+                if (!exists) { const opt = document.createElement('option'); opt.value = cls; opt.innerHTML = cls; filterDropdown.appendChild(opt); }
+
+                showToast(`Data Siswa ${properName} berhasil disimpan!`, 'success');
+                closeModal('add-siswa-modal');
+                
+                await fetchMasterData();
+                renderStudents();
+                
+                nameInp.value = ''; classInp.value = ''; jenjangInp.value = 'SD';
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan data siswa.", "error");
+            } finally {
+                btn.innerHTML = `Simpan Data Siswa`; btn.disabled = false;
+            }
+        }
+
+        async function submitNewGuru(e) {
+            e.preventDefault();
+            const nameInp = document.getElementById('inp-new-guru-name');
+            const posInp = document.getElementById('inp-new-guru-pos');
+            const btn = document.getElementById('btn-submit-guru');
+            
+            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
+
+            try {
+                const editId = document.getElementById('edit-guru-id').value;
+                const payload = { cabang_id: sessionCabang.id, nama: nameInp.value, jabatan: posInp.value };
+                let errorObj = null;
+
+                if (editId) {
+                    const { error } = await supabaseApp.from('guru').update(payload).eq('id', editId);
+                    errorObj = error;
+                } else {
+                    const { error } = await supabaseApp.from('guru').insert([payload]);
+                    errorObj = error;
+                }
+                if (errorObj) throw errorObj;
+
+                showToast(`Data Guru berhasil disimpan!`, 'success');
+                closeModal('add-guru-modal');
+                
+                await fetchMasterData();
+                renderTeachers();
+                
+                nameInp.value = ''; posInp.value = '';
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan data guru.", "error");
+            } finally {
+                btn.innerHTML = `Simpan Data Guru`; btn.disabled = false;
+            }
+        }
+
+        function toggleLokasiForm() {
+            const val = document.getElementById('inp-lokasi-type').value;
+            document.getElementById('form-fieldtrip').classList.add('hidden');
+            document.getElementById('form-outing').classList.add('hidden');
+            document.getElementById('form-gtc').classList.add('hidden');
+            
+            if(val === 'Fieldtrip') document.getElementById('form-fieldtrip').classList.remove('hidden');
+            if(val === 'Outing Class') document.getElementById('form-outing').classList.remove('hidden');
+            if(val === 'Goes to Campus') document.getElementById('form-gtc').classList.remove('hidden');
+        }
+
+        async function submitDBLokasi(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit-lokasi');
+            const type = document.getElementById('inp-lokasi-type').value;
+            const fileInp = document.getElementById('upload-lokasi-img');
+
+            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; 
+            btn.disabled = true;
+
+            let namaUtama = '', harga = '', areaLoc = '', cp = '', fasilitas = '';
+            let univ = null, fak = null, jur = null;
+
+            if(type === 'Fieldtrip') {
+                namaUtama = document.getElementById('loc-name-ft').value;
+                harga = document.getElementById('loc-price-ft').value;
+                areaLoc = document.getElementById('loc-addr-ft').value;
+                cp = document.getElementById('loc-cp-ft').value;
+                fasilitas = document.getElementById('loc-amen-ft').value;
+            } else if (type === 'Outing Class') {
+                namaUtama = document.getElementById('loc-name-out').value;
+                harga = document.getElementById('loc-price-out').value;
+                areaLoc = document.getElementById('loc-addr-out').value;
+                cp = document.getElementById('loc-cp-out').value;
+                fasilitas = document.getElementById('loc-amen-out').value;
+            } else {
+                univ = document.getElementById('loc-name-gtc').value;
+                fak = document.getElementById('loc-fak-gtc').value;
+                jur = document.getElementById('loc-jur-gtc').value;
+                namaUtama = `${univ} - ${fak} (${jur})`;
+                harga = 'Kontak Humas';
+                areaLoc = document.getElementById('loc-addr-gtc').value;
+                cp = document.getElementById('loc-cp-gtc').value;
+                fasilitas = "Kunjungan Kampus";
+            }
+
+            let needsArray = [];
+            if(document.getElementById('need-bus').checked) needsArray.push('Bus');
+            if(document.getElementById('need-cat').checked) needsArray.push('Catering');
+
+            try {
+                let imgUrl = null;
+                if (fileInp.files.length > 0) {
+                    showToast('Sedang mengunggah foto lokasi...', 'info');
+                    imgUrl = await uploadImageToSupabase(fileInp.files[0]);
+                }
+
+                let fasArray = fasilitas.split(',').map(item => item.trim()).filter(i => i);
+                const payload = {
+                    nama: namaUtama, jenis: type, harga: harga, area: areaLoc,
+                    kontak: cp, deskripsi: fasilitas, fasilitas: fasArray, needs: needsArray,
+                    nama_univ: univ, fakultas: fak, jurusan: jur
+                };
+                if(imgUrl) payload.gambar = imgUrl; 
+
+                const editId = document.getElementById('edit-lokasi-id').value;
+                if (editId) {
+                    const { error } = await supabaseApp.from('lokasi').update(payload).eq('id', editId);
+                    if (error) throw error;
+                    showToast(`Data Lokasi berhasil diupdate!`, 'success');
+                } else {
+                    const { error } = await supabaseApp.from('lokasi').insert([payload]);
+                    if (error) throw error;
+                    showToast(`Data Lokasi berhasil ditambahkan ke Katalog!`, 'success');
+                }
+
+                e.target.reset();
+                document.getElementById('edit-lokasi-id').value = '';
+                document.getElementById('name-lokasi-img').innerText = 'Format: JPG, PNG, WEBP (Max 2MB)';
+                document.getElementById('name-lokasi-img').classList.remove('text-aw-blue', 'font-bold');
+                document.getElementById('btn-submit-lokasi').innerHTML = '<i class="fa-solid fa-save"></i> Simpan Lokasi';
+                
+                await fetchMasterData(); 
+                renderLocations(); 
+                renderKatalog('Lokasi');
+                setTimeout(() => switchTab('katalog'), 500); 
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan data lokasi.", "error");
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function submitDBBus(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit-bus');
+            const namaInp = document.getElementById('inp-bus-name').value;
+            const cpInp = document.getElementById('inp-bus-cp').value;
+            const hargaInp = document.getElementById('inp-bus-price').value;
+            const fileInp = document.getElementById('upload-bus-img'); 
+
+            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
+            
+            try {
+                let imgUrl = null;
+                if (fileInp.files.length > 0) {
+                    showToast('Sedang mengunggah foto armada...', 'info');
+                    imgUrl = await uploadImageToSupabase(fileInp.files[0]);
+                }
+
+                const payload = { nama: namaInp, kontak: cpInp, harga: parseInt(hargaInp) };
+                if (imgUrl) payload.gambar = imgUrl; 
+
+                const editId = document.getElementById('edit-bus-id').value;
+                if (editId) {
+                    const { error } = await supabaseApp.from('vendor_bus').update(payload).eq('id', editId);
+                    if (error) throw error;
+                    showToast('Data Vendor Bus berhasil diupdate!', 'success');
+                } else {
+                    const { error } = await supabaseApp.from('vendor_bus').insert([payload]);
+                    if (error) throw error;
+                    showToast('Data Vendor Bus berhasil disimpan!', 'success');
+                }
+
+                e.target.reset();
+                document.getElementById('edit-bus-id').value = '';
+                document.getElementById('name-bus-img').innerText = 'Format: JPG, PNG, WEBP (Max 2MB)';
+                document.getElementById('name-bus-img').classList.remove('text-aw-blue', 'font-bold');
+                document.getElementById('btn-submit-bus').innerHTML = '<i class="fa-solid fa-save"></i> Simpan Vendor Bus';
+                
+                await fetchMasterData(); 
+                renderBusCatalog(); 
+                renderKatalog('Bus');
+                setTimeout(() => switchTab('katalog'), 500); 
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan data Vendor Bus.", "error");
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        let konsumsiSlotCount = 3;
+        function loadLokasiKonsumsi() {
+            const select = document.getElementById('inp-konsumsi-lokasi');
+            if(!select) return;
+            let html = '<option value="">-- Pilih Lokasi (Jika Ada) --</option><option value="general" class="font-bold text-slate-800">Bebas (Bisa dikirim ke mana saja)</option>';
+            MOCK_LOCATIONS.forEach(loc => { html += `<option value="${loc.id}">${loc.name} (${loc.area})</option>`; });
+            select.innerHTML = html;
+        }
+
+        function addKonsumsiSlot() {
+            konsumsiSlotCount++;
+            const container = document.getElementById('konsumsi-slots-container');
+            const newSlot = document.createElement('div');
+            newSlot.className = "border-2 border-dashed border-slate-300 rounded-xl p-4 flex flex-col items-center justify-center hover:border-aw-blue transition-colors cursor-pointer bg-slate-50 group min-h-[100px] fade-in";
+            newSlot.innerHTML = `<i class="fa-solid fa-image text-slate-400 group-hover:text-aw-blue transition-colors text-xl"></i>
+                <p id="name-konsumsi-img-${konsumsiSlotCount}" class="text-[10px] text-slate-400 font-medium mt-2 truncate w-full text-center px-1">Gambar ${konsumsiSlotCount}</p>
+                <input type="file" id="upload-konsumsi-img-${konsumsiSlotCount}" class="hidden" accept="image/*" onchange="document.getElementById('name-konsumsi-img-${konsumsiSlotCount}').innerText = this.files[0].name; document.getElementById('name-konsumsi-img-${konsumsiSlotCount}').classList.add('text-aw-blue', 'font-bold')">`;
+            newSlot.onclick = () => document.getElementById(`upload-konsumsi-img-${konsumsiSlotCount}`).click();
+            container.appendChild(newSlot);
+        }
+
+        async function submitDBKonsumsi(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit-konsumsi');
+            const namaInp = document.getElementById('inp-cat-name').value;
+            const cpInp = document.getElementById('inp-cat-cp').value;
+            const hargaInp = document.getElementById('inp-cat-price').value;
+            const locInp = document.getElementById('inp-konsumsi-lokasi').value;
+
+            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
+            
+            try {
+                let imgUrlsArray = [];
+                for (let i = 1; i <= konsumsiSlotCount; i++) {
+                    const currentFileInp = document.getElementById(`upload-konsumsi-img-${i}`);
+                    if (currentFileInp && currentFileInp.files.length > 0) {
+                        showToast(`Mengunggah gambar katalog ${i}...`, 'info');
+                        const uploadedUrl = await uploadImageToSupabase(currentFileInp.files[0]);
+                        if (uploadedUrl) imgUrlsArray.push(uploadedUrl);
+                    }
+                }
+                const finalGambarStr = imgUrlsArray.length > 0 ? imgUrlsArray.join(',') : null;
+
+                let payload = { nama: namaInp, kontak: cpInp, harga: parseInt(hargaInp) };
+                if (locInp && locInp !== "general") payload.lokasi_id = parseInt(locInp);
+                if (finalGambarStr) payload.gambar = finalGambarStr;
+
+                const editId = document.getElementById('edit-cat-id').value;
+                if (editId) {
+                    const { error } = await supabaseApp.from('vendor_catering').update(payload).eq('id', editId);
+                    if (error) throw error;
+                    showToast('Data Vendor Catering berhasil diupdate!', 'success');
+                } else {
+                    const { error } = await supabaseApp.from('vendor_catering').insert([payload]);
+                    if (error) throw error;
+                    showToast('Data Vendor Catering berhasil disimpan!', 'success');
+                }
+
+                e.target.reset();
+                document.getElementById('edit-cat-id').value = '';
+                for(let i = 1; i <= konsumsiSlotCount; i++) {
+                    const nameEl = document.getElementById(`name-konsumsi-img-${i}`);
+                    if(nameEl) { nameEl.innerText = `Gambar ${i}`; nameEl.classList.remove('text-aw-blue', 'font-bold'); }
+                }
+                document.getElementById('btn-submit-konsumsi').innerHTML = '<i class="fa-solid fa-save"></i> Simpan Vendor Catering';
+                
+                await fetchMasterData(); 
+                renderCateringCatalog(); 
+                renderKatalog('Konsumsi');
+                setTimeout(() => switchTab('katalog'), 500); 
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan data Catering.", "error");
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // SUB-RENDER (Tabel, Rombel, & Wizard UI)
+        // ==========================================
         function renderStudents() {
             const tbody = document.getElementById('siswa-table-body');
             const searchQ = document.getElementById('inp-search-siswa').value.toLowerCase();
@@ -1971,121 +2247,6 @@ async function uploadImageToSupabase(file) {
             tbody.innerHTML = html;
         }
 
-        // Fungsi Master Hapus Data (Bisa dipakai buat tabel mana aja)
-        async function deleteMasterData(table, id) {
-            if(!confirm(`Yakin mau menghapus data ini dari database?`)) return;
-            
-            showToast("Menghapus data...", "info");
-            try {
-                // Proses hapus ke Supabase
-                const { error } = await supabaseApp.from(table).delete().eq('id', id);
-                if(error) throw error;
-                
-                showToast("Data berhasil dihapus!", "success");
-                
-                // Refresh data dari server agar tabel di layar update otomatis
-                await fetchMasterData();
-                if(table === 'siswa') renderStudents();
-                else if(table === 'guru') renderTeachers();
-                else {
-                    renderLocations();
-                    renderBusCatalog();
-                    renderCateringCatalog();
-                    if(typeof renderKatalog === 'function') renderKatalog(activeKatalogTab);
-                }
-            } catch (err) {
-                console.error("Gagal hapus:", err);
-                showToast("Gagal menghapus data.", "error");
-            }
-        }
-
-        // Simpan Siswa ke Supabase
-        async function submitNewSiswa(e) {
-            e.preventDefault();
-            const nameInp = document.getElementById('inp-new-siswa-name');
-            const jenjangInp = document.getElementById('inp-new-siswa-jenjang');
-            const classInp = document.getElementById('inp-new-siswa-class');
-            const btn = document.getElementById('btn-submit-siswa');
-
-            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
-
-            const cls = classInp.value.toUpperCase();
-            const properName = nameInp.value.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
-
-            try {
-                const editId = document.getElementById('edit-siswa-id').value;
-                const payload = { cabang_id: sessionCabang.id, nama: properName, jenjang: jenjangInp.value, kelas: cls };
-                let errorObj = null;
-
-                if (editId) {
-                    const { error } = await supabaseApp.from('siswa').update(payload).eq('id', editId);
-                    errorObj = error;
-                } else {
-                    const { error } = await supabaseApp.from('siswa').insert([payload]);
-                    errorObj = error;
-                }
-                if (errorObj) throw errorObj;
-
-                // Update opsi dropdown kelas jika kelas baru
-                const filterDropdown = document.getElementById('filter-kelas-siswa');
-                let exists = false;
-                for (let i = 0; i < filterDropdown.options.length; i++) { if (filterDropdown.options[i].value === cls) { exists = true; break; } }
-                if (!exists) { const opt = document.createElement('option'); opt.value = cls; opt.innerHTML = cls; filterDropdown.appendChild(opt); }
-
-                showToast(`Data Siswa ${properName} berhasil disimpan!`, 'success');
-                closeModal('add-siswa-modal');
-                
-                // Refresh data dari server
-                await fetchMasterData();
-                renderStudents();
-                
-                nameInp.value = ''; classInp.value = ''; jenjangInp.value = 'SD';
-            } catch (err) {
-                console.error(err);
-                showToast("Gagal menyimpan data siswa.", "error");
-            } finally {
-                btn.innerHTML = `Simpan Data Siswa`; btn.disabled = false;
-            }
-        }
-
-        // Simpan Guru ke Supabase
-        async function submitNewGuru(e) {
-            e.preventDefault();
-            const nameInp = document.getElementById('inp-new-guru-name');
-            const posInp = document.getElementById('inp-new-guru-pos');
-            const btn = document.getElementById('btn-submit-guru');
-            
-            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
-
-            try {
-                const editId = document.getElementById('edit-guru-id').value;
-                const payload = { cabang_id: sessionCabang.id, nama: nameInp.value, jabatan: posInp.value };
-                let errorObj = null;
-
-                if (editId) {
-                    const { error } = await supabaseApp.from('guru').update(payload).eq('id', editId);
-                    errorObj = error;
-                } else {
-                    const { error } = await supabaseApp.from('guru').insert([payload]);
-                    errorObj = error;
-                }
-                if (errorObj) throw errorObj;
-
-                showToast(`Data Guru berhasil disimpan!`, 'success');
-                closeModal('add-guru-modal');
-                
-                // Refresh data dari server
-                await fetchMasterData();
-                renderTeachers();
-                
-                nameInp.value = ''; posInp.value = '';
-            } catch (err) {
-                console.error(err);
-                showToast("Gagal menyimpan data guru.", "error");
-            } finally {
-                btn.innerHTML = `Simpan Data Guru`; btn.disabled = false;
-            }
-        }
         function prepAddModal(type) {
             if (type === 'Siswa') {
                 document.getElementById('edit-siswa-id').value = '';
@@ -2128,256 +2289,6 @@ async function uploadImageToSupabase(file) {
             }
         }
 
-        function openImportModal(type) {
-            document.getElementById('csv-type').value = type;
-            const guide = document.getElementById('csv-guide-list');
-            if(type === 'siswa') {
-                guide.innerHTML = `<li><strong class="text-slate-800">Kolom 1:</strong> Nama Lengkap Siswa</li><li><strong class="text-slate-800">Kolom 2:</strong> Jenjang (SD/SMP/SMA)</li><li><strong class="text-slate-800">Kolom 3:</strong> Kelas (Cth: 1 INTER 1)</li>`;
-            } else {
-                guide.innerHTML = `<li><strong class="text-slate-800">Kolom 1:</strong> Nama Lengkap (beserta gelar)</li><li><strong class="text-slate-800">Kolom 2:</strong> Posisi / Jabatan</li>`;
-            }
-            openModal('import-csv-modal');
-        }
-
-        function handleImportCSV(e) {
-            e.preventDefault();
-            const type = document.getElementById('csv-type').value;
-            const btn = document.getElementById('btn-import-csv');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
-
-            setTimeout(() => {
-                showToast(`Data CSV berhasil di-import ke Database!`, 'success');
-                closeModal('import-csv-modal');
-                if(type === 'siswa') renderStudents();
-                if(type === 'guru') renderTeachers();
-                btn.innerHTML = originalText; btn.disabled = false;
-                document.getElementById('csv-upload').value = '';
-                document.getElementById('csv-filename').innerText = 'Klik untuk pilih file .csv';
-            }, 1200);
-        }
-
-        function toggleLokasiForm() {
-            const val = document.getElementById('inp-lokasi-type').value;
-            document.getElementById('form-fieldtrip').classList.add('hidden');
-            document.getElementById('form-outing').classList.add('hidden');
-            document.getElementById('form-gtc').classList.add('hidden');
-            
-            if(val === 'Fieldtrip') document.getElementById('form-fieldtrip').classList.remove('hidden');
-            if(val === 'Outing Class') document.getElementById('form-outing').classList.remove('hidden');
-            if(val === 'Goes to Campus') document.getElementById('form-gtc').classList.remove('hidden');
-        }
-
-       async function submitDBLokasi(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btn-submit-lokasi');
-            const type = document.getElementById('inp-lokasi-type').value;
-            const fileInp = document.getElementById('upload-lokasi-img');
-
-            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; 
-            btn.disabled = true;
-
-            let namaUtama = '', harga = '', areaLoc = '', cp = '', fasilitas = '';
-            let univ = null, fak = null, jur = null;
-
-            // 1. Ambil data berdasarkan jenis form yang aktif
-            if(type === 'Fieldtrip') {
-                namaUtama = document.getElementById('loc-name-ft').value;
-                harga = document.getElementById('loc-price-ft').value;
-                areaLoc = document.getElementById('loc-addr-ft').value;
-                cp = document.getElementById('loc-cp-ft').value;
-                fasilitas = document.getElementById('loc-amen-ft').value;
-            } else if (type === 'Outing Class') {
-                namaUtama = document.getElementById('loc-name-out').value;
-                harga = document.getElementById('loc-price-out').value;
-                areaLoc = document.getElementById('loc-addr-out').value;
-                cp = document.getElementById('loc-cp-out').value;
-                fasilitas = document.getElementById('loc-amen-out').value;
-            } else {
-                univ = document.getElementById('loc-name-gtc').value;
-                fak = document.getElementById('loc-fak-gtc').value;
-                jur = document.getElementById('loc-jur-gtc').value;
-                namaUtama = `${univ} - ${fak} (${jur})`;
-                harga = 'Kontak Humas';
-                areaLoc = document.getElementById('loc-addr-gtc').value;
-                cp = document.getElementById('loc-cp-gtc').value;
-                fasilitas = "Kunjungan Kampus";
-            }
-
-            // 2. Kumpulkan Array Needs
-            let needsArray = [];
-            if(document.getElementById('need-bus').checked) needsArray.push('Bus');
-            if(document.getElementById('need-cat').checked) needsArray.push('Catering');
-
-            try {
-                let imgUrl = null;
-                if (fileInp.files.length > 0) {
-                    showToast('Sedang mengunggah foto lokasi...', 'info');
-                    imgUrl = await uploadImageToSupabase(fileInp.files[0]);
-                }
-
-                let fasArray = fasilitas.split(',').map(item => item.trim()).filter(i => i);
-                const payload = {
-                    nama: namaUtama, jenis: type, harga: harga, area: areaLoc,
-                    kontak: cp, deskripsi: fasilitas, fasilitas: fasArray, needs: needsArray,
-                    nama_univ: univ, fakultas: fak, jurusan: jur
-                };
-                if(imgUrl) payload.gambar = imgUrl; // Jangan timpa gambar kalau gak upload baru
-
-                const editId = document.getElementById('edit-lokasi-id').value;
-                if (editId) {
-                    const { error } = await supabaseApp.from('lokasi').update(payload).eq('id', editId);
-                    if (error) throw error;
-                    showToast(`Data Lokasi berhasil diupdate!`, 'success');
-                } else {
-                    const { error } = await supabaseApp.from('lokasi').insert([payload]);
-                    if (error) throw error;
-                    showToast(`Data Lokasi berhasil ditambahkan ke Katalog!`, 'success');
-                }
-
-                e.target.reset();
-                document.getElementById('edit-lokasi-id').value = '';
-                document.getElementById('name-lokasi-img').innerText = 'Format: JPG, PNG, WEBP (Max 2MB)';
-                document.getElementById('name-lokasi-img').classList.remove('text-aw-blue', 'font-bold');
-                document.getElementById('btn-submit-lokasi').innerHTML = '<i class="fa-solid fa-save"></i> Simpan Lokasi';
-                
-                await fetchMasterData(); 
-                renderLocations(); 
-                renderKatalog('Lokasi');
-                setTimeout(() => switchTab('katalog'), 500); // Balik ke tab katalog otomatis
-            } catch (err) {
-                console.error(err);
-                showToast("Gagal menyimpan data lokasi.", "error");
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        async function submitDBBus(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btn-submit-bus');
-            const namaInp = document.getElementById('inp-bus-name').value;
-            const cpInp = document.getElementById('inp-bus-cp').value;
-            const hargaInp = document.getElementById('inp-bus-price').value;
-            const fileInp = document.getElementById('upload-bus-img'); // Tangkap elemen file
-
-            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
-            
-            try {
-                let imgUrl = null;
-                if (fileInp.files.length > 0) {
-                    showToast('Sedang mengunggah foto armada...', 'info');
-                    imgUrl = await uploadImageToSupabase(fileInp.files[0]);
-                }
-
-                const payload = { nama: namaInp, kontak: cpInp, harga: parseInt(hargaInp) };
-                if (imgUrl) payload.gambar = imgUrl; // Hanya overwrite gambar jika upload file baru
-
-                const editId = document.getElementById('edit-bus-id').value;
-                if (editId) {
-                    const { error } = await supabaseApp.from('vendor_bus').update(payload).eq('id', editId);
-                    if (error) throw error;
-                    showToast('Data Vendor Bus berhasil diupdate!', 'success');
-                } else {
-                    const { error } = await supabaseApp.from('vendor_bus').insert([payload]);
-                    if (error) throw error;
-                    showToast('Data Vendor Bus berhasil disimpan!', 'success');
-                }
-
-                e.target.reset();
-                document.getElementById('edit-bus-id').value = '';
-                document.getElementById('name-bus-img').innerText = 'Format: JPG, PNG, WEBP (Max 2MB)';
-                document.getElementById('name-bus-img').classList.remove('text-aw-blue', 'font-bold');
-                document.getElementById('btn-submit-bus').innerHTML = '<i class="fa-solid fa-save"></i> Simpan Vendor Bus';
-                
-                await fetchMasterData(); 
-                renderBusCatalog(); 
-                renderKatalog('Bus');
-                setTimeout(() => switchTab('katalog'), 500); // Balik ke tab katalog otomatis
-            } catch (err) {
-                console.error(err);
-                showToast("Gagal menyimpan data Vendor Bus.", "error");
-            } finally {
-                btn.disabled = false;
-            }
-        }
-        let konsumsiSlotCount = 3;
-        function loadLokasiKonsumsi() {
-            const select = document.getElementById('inp-konsumsi-lokasi');
-            if(!select) return;
-            let html = '<option value="">-- Pilih Lokasi (Jika Ada) --</option><option value="general" class="font-bold text-slate-800">Bebas (Bisa dikirim ke mana saja)</option>';
-            MOCK_LOCATIONS.forEach(loc => { html += `<option value="${loc.id}">${loc.name} (${loc.area})</option>`; });
-            select.innerHTML = html;
-        }
-
-        function addKonsumsiSlot() {
-            konsumsiSlotCount++;
-            const container = document.getElementById('konsumsi-slots-container');
-            const newSlot = document.createElement('div');
-            newSlot.className = "border-2 border-dashed border-slate-300 rounded-xl p-4 flex flex-col items-center justify-center hover:border-aw-blue transition-colors cursor-pointer bg-slate-50 group min-h-[100px] fade-in";
-            newSlot.innerHTML = `<i class="fa-solid fa-image text-slate-400 group-hover:text-aw-blue transition-colors text-xl"></i>
-                <p id="name-konsumsi-img-${konsumsiSlotCount}" class="text-[10px] text-slate-400 font-medium mt-2 truncate w-full text-center px-1">Gambar ${konsumsiSlotCount}</p>
-                <input type="file" id="upload-konsumsi-img-${konsumsiSlotCount}" class="hidden" accept="image/*" onchange="document.getElementById('name-konsumsi-img-${konsumsiSlotCount}').innerText = this.files[0].name; document.getElementById('name-konsumsi-img-${konsumsiSlotCount}').classList.add('text-aw-blue', 'font-bold')">`;
-            newSlot.onclick = () => document.getElementById(`upload-konsumsi-img-${konsumsiSlotCount}`).click();
-            container.appendChild(newSlot);
-        }
-
-       async function submitDBKonsumsi(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btn-submit-konsumsi');
-            const namaInp = document.getElementById('inp-cat-name').value;
-            const cpInp = document.getElementById('inp-cat-cp').value;
-            const hargaInp = document.getElementById('inp-cat-price').value;
-            const locInp = document.getElementById('inp-konsumsi-lokasi').value;
-
-            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
-            
-           try {
-                let imgUrlsArray = [];
-                for (let i = 1; i <= konsumsiSlotCount; i++) {
-                    const currentFileInp = document.getElementById(`upload-konsumsi-img-${i}`);
-                    if (currentFileInp && currentFileInp.files.length > 0) {
-                        showToast(`Mengunggah gambar katalog ${i}...`, 'info');
-                        const uploadedUrl = await uploadImageToSupabase(currentFileInp.files[0]);
-                        if (uploadedUrl) imgUrlsArray.push(uploadedUrl);
-                    }
-                }
-                const finalGambarStr = imgUrlsArray.length > 0 ? imgUrlsArray.join(',') : null;
-
-                let payload = { nama: namaInp, kontak: cpInp, harga: parseInt(hargaInp) };
-                if (locInp && locInp !== "general") payload.lokasi_id = parseInt(locInp);
-                if (finalGambarStr) payload.gambar = finalGambarStr;
-
-                const editId = document.getElementById('edit-cat-id').value;
-                if (editId) {
-                    const { error } = await supabaseApp.from('vendor_catering').update(payload).eq('id', editId);
-                    if (error) throw error;
-                    showToast('Data Vendor Catering berhasil diupdate!', 'success');
-                } else {
-                    const { error } = await supabaseApp.from('vendor_catering').insert([payload]);
-                    if (error) throw error;
-                    showToast('Data Vendor Catering berhasil disimpan!', 'success');
-                }
-
-                e.target.reset();
-                document.getElementById('edit-cat-id').value = '';
-                for(let i = 1; i <= konsumsiSlotCount; i++) {
-                    const nameEl = document.getElementById(`name-konsumsi-img-${i}`);
-                    if(nameEl) { nameEl.innerText = `Gambar ${i}`; nameEl.classList.remove('text-aw-blue', 'font-bold'); }
-                }
-                document.getElementById('btn-submit-konsumsi').innerHTML = '<i class="fa-solid fa-save"></i> Simpan Vendor Catering';
-                
-                await fetchMasterData(); 
-                renderCateringCatalog(); 
-                renderKatalog('Konsumsi');
-                setTimeout(() => switchTab('katalog'), 500); // Balik ke tab katalog
-            } catch (err) {
-                console.error(err);
-                showToast("Gagal menyimpan data Catering.", "error");
-            } finally {
-                btn.disabled = false;
-            }
-        }
         function getNeedsBadgesHtml(needsArray) {
             if(!needsArray || needsArray.length === 0) return '';
             let html = '';
@@ -2513,6 +2424,9 @@ async function uploadImageToSupabase(file) {
             container.innerHTML = html;
         }
 
+        // ==========================================
+        // WIZARD BOOKING LOGIC
+        // ==========================================
         function checkStep3() {
             const busCount = document.getElementById('wiz-bus-count').value;
             if(wizData.busVendor && busCount > 0) { activateNextBtn(true, `Lanjut Pilih Konsumsi ➔`); }
@@ -2735,9 +2649,9 @@ async function uploadImageToSupabase(file) {
                 showToast("Booking Berhasil! Jadwal telah dikunci dari cabang lain.", "success");
                 closeWizard();
                 
-                await fetchMasterData(); // Tarik data event terbaru
-                renderInformation();     // Refresh dashboard depan
-                initMainCalendar();      // Update titik kalender
+                await fetchMasterData(); 
+                renderInformation();     
+                initMainCalendar();      
                 setTimeout(() => switchTab('information'), 500);
             } catch (err) {
                 console.error(err);
@@ -2748,6 +2662,9 @@ async function uploadImageToSupabase(file) {
             }
         }
 
+        // ==========================================
+        // EDIT BOOKING LOGIC
+        // ==========================================
         function openEditBooking(eventId) {
             const ev = MY_PLANNING.find(p => p.id === eventId);
             if(!ev) return;
@@ -2757,12 +2674,10 @@ async function uploadImageToSupabase(file) {
             document.getElementById('edit-time-start').value = ev.extendedProps.timeStart;
             document.getElementById('edit-time-end').value = ev.extendedProps.timeEnd;
 
-            // Load Contacts with STACKED Layout (Clickable Version)
             const loc = MOCK_LOCATIONS.find(l => l.id === ev.extendedProps.locId);
             const bus = MOCK_BUS.find(b => b.id === ev.extendedProps.busVendorId);
             const cat = MOCK_CATERING.find(c => c.id === ev.extendedProps.catVendorId);
             
-            // Fungsi kecil buat misahin angka nomor HP biar bisa dipanggil atribut href="tel:..."
             const getTel = (str) => str ? str.replace(/[^0-9]/g, '') : '';
 
             let contactHtml = '';
@@ -2773,7 +2688,6 @@ async function uploadImageToSupabase(file) {
             
             document.getElementById('edit-contacts-list').innerHTML = contactHtml;
 
-            // Dropdowns
             const busSel = document.getElementById('edit-bus-select');
             let bHtml = '<option value="">- Tidak Pakai -</option>';
             MOCK_BUS.forEach(b => { bHtml += `<option value="${b.id}" ${parseInt(ev.extendedProps.busVendorId) === b.id ? 'selected':''}>${b.name}</option>`; });
@@ -2811,7 +2725,7 @@ async function uploadImageToSupabase(file) {
                 showToast("Perubahan event planning berhasil disimpan!", "success");
                 closeModal('edit-booking-modal');
                 
-                await fetchMasterData(); // Tarik data event terbaru
+                await fetchMasterData(); 
                 renderInformation();
                 initMainCalendar();
             } catch(err) {
@@ -2823,17 +2737,20 @@ async function uploadImageToSupabase(file) {
             }
         }
 
+        // ==========================================
+        // GLOBAL CALENDAR & REVIEW LOGIC
+        // ==========================================
         function initMainCalendar() {
             const calendarEl = document.getElementById('main-calendar-container');
             if (!calendarEl) return;
-            if (mainCalendar) { mainCalendar.destroy(); } // Hapus kalender lama biar refresh
+            if (mainCalendar) { mainCalendar.destroy(); } 
 
             mainCalendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 initialDate: '2026-09-01',
                 fixedWeekCount: false,
                 headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
-                events: GLOBAL_EVENTS, // Langsung baca dari memori Supabase
+                events: GLOBAL_EVENTS, 
                 eventContent: function(arg) {
                     return {
                         html: `<div class="flex flex-col p-1 overflow-hidden" title="${arg.event.title} di ${arg.event.extendedProps.loc}">
@@ -2939,7 +2856,6 @@ async function uploadImageToSupabase(file) {
                 if(item) {
                     item.isReviewed = true;
                     
-                    // Generate Laporan Baru ke Overview Dashboard
                     const locData = MOCK_LOCATIONS.find(l => l.id === item.locId);
                     const newReport = {
                         id: `rep-new-${Date.now()}`, 
@@ -2947,19 +2863,19 @@ async function uploadImageToSupabase(file) {
                         name: item.event, 
                         loc: locData ? locData.name : 'Unknown', 
                         date: item.date,
-                        attPct: 100, // Dummy absen
+                        attPct: 100, 
                         absentList: 'Nihil',
-                        busCount: 1, // Dummy bus yang dipakai
+                        busCount: 1, 
                         costTicket: parseInt(document.getElementById('rep-inp-tiket').value) || 0,
                         costFood: parseInt(document.getElementById('rep-inp-konsumsi').value) || 0,
                         costTrans: parseInt(document.getElementById('rep-inp-transport').value) || 0,
-                        totalPax: 100, // Dummy kapasitas
+                        totalPax: 100, 
                         ratingBus: parseInt(rateBus.value),
                         ratingFood: parseInt(rateFood.value),
                         ratingTrans: parseInt(rateLoc.value)
                     };
                     MOCK_REPORTS.unshift(newReport); 
-                    renderInformation(); // Refresh Card di Tab Info
+                    renderInformation(); 
                 }
 
                 showToast("Laporan operasional & finansial berhasil disimpan ke Arsip Pusat!", "success");
@@ -2994,6 +2910,38 @@ async function uploadImageToSupabase(file) {
             document.getElementById('rep-rate-trans').innerHTML = genStars(rep.ratingTrans);
 
             openModal('report-modal');
+        }
+
+        // ==========================================
+        // IMPORT CSV LOGIC
+        // ==========================================
+        function openImportModal(type) {
+            document.getElementById('csv-type').value = type;
+            const guide = document.getElementById('csv-guide-list');
+            if(type === 'siswa') {
+                guide.innerHTML = `<li><strong class="text-slate-800">Kolom 1:</strong> Nama Lengkap Siswa</li><li><strong class="text-slate-800">Kolom 2:</strong> Jenjang (SD/SMP/SMA)</li><li><strong class="text-slate-800">Kolom 3:</strong> Kelas (Cth: 1 INTER 1)</li>`;
+            } else {
+                guide.innerHTML = `<li><strong class="text-slate-800">Kolom 1:</strong> Nama Lengkap (beserta gelar)</li><li><strong class="text-slate-800">Kolom 2:</strong> Posisi / Jabatan</li>`;
+            }
+            openModal('import-csv-modal');
+        }
+
+        function handleImportCSV(e) {
+            e.preventDefault();
+            const type = document.getElementById('csv-type').value;
+            const btn = document.getElementById('btn-import-csv');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<div class="loader-spin border-white border-t-transparent mx-auto"></div>`; btn.disabled = true;
+
+            setTimeout(() => {
+                showToast(`Data CSV berhasil di-import ke Database!`, 'success');
+                closeModal('import-csv-modal');
+                if(type === 'siswa') renderStudents();
+                if(type === 'guru') renderTeachers();
+                btn.innerHTML = originalText; btn.disabled = false;
+                document.getElementById('csv-upload').value = '';
+                document.getElementById('csv-filename').innerText = 'Klik untuk pilih file .csv';
+            }, 1200);
         }
 
         // Init App
