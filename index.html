@@ -1603,8 +1603,14 @@ async function uploadImageToSupabase(file) {
         }
 
         // MOCK_LOCATIONS fetch data logic has been established
+        // MOCK_LOCATIONS fetch data logic has been established
         async function fetchMasterData() {
             try {
+                // 0. Ambil Data Seluruh Cabang (Untuk mapping nama cabang di Kalender)
+                const { data: allCabang } = await supabaseApp.from('akun_cabang').select('id, nama_cabang, kode_cabang');
+                let mapCabang = {};
+                if(allCabang) allCabang.forEach(c => mapCabang[c.id] = c);
+
                 const { data: dataSiswa } = await supabaseApp.from('siswa').select('*').eq('cabang_id', sessionCabang.id).order('nama', { ascending: true });
                 if(dataSiswa) MOCK_STUDENTS = dataSiswa.map(s => ({ id: s.id, name: s.nama, jenjang: s.jenjang, class: s.kelas }));
 
@@ -1622,6 +1628,44 @@ async function uploadImageToSupabase(file) {
                     let fallbackImg = 'https://placehold.co/800x400/e2e8f0/64748b?text=Lokasi';
                     return { id: l.id, name: l.nama, type: l.jenis || 'Fieldtrip', area: l.area || '', price: l.harga || '', needs: l.needs || [], img: l.gambar || fallbackImg, desc: l.deskripsi || l.area || '', amen: l.fasilitas || [], cp: l.kontak || '', nama_univ: l.nama_univ, fakultas: l.fakultas, jurusan: l.jurusan };
                 });
+
+                // 6. Tarik Data Transaksi Events (Booking)
+                const { data: dataEvents } = await supabaseApp.from('events').select('*');
+                if(dataEvents) {
+                    GLOBAL_EVENTS = [];
+                    MY_PLANNING = [];
+                    dataEvents.forEach(ev => {
+                        const loc = MOCK_LOCATIONS.find(l => l.id === ev.lokasi_id);
+                        if (!loc) return; 
+
+                        const isMyEvent = ev.cabang_id === sessionCabang.id;
+                        const cbInfo = mapCabang[ev.cabang_id] || { nama_cabang: `Cabang ${ev.cabang_id}`, kode_cabang: `C${ev.cabang_id}` };
+
+                        const evObj = {
+                            id: ev.id,
+                            title: `${loc.type} - ${cbInfo.kode_cabang}`, 
+                            type: loc.type,
+                            start: ev.tanggal,
+                            color: EVENT_COLORS[loc.type] || '#ccc',
+                            extendedProps: {
+                                branch: cbInfo.nama_cabang,
+                                locId: ev.lokasi_id,
+                                loc: loc.name,
+                                timeStart: ev.waktu_mulai,
+                                timeEnd: ev.waktu_selesai,
+                                pax: ev.total_pax,
+                                busVendorId: ev.bus_vendor_id,
+                                busUnit: ev.bus_unit,
+                                catVendorId: ev.cat_vendor_id,
+                                catPax: ev.cat_pax
+                            }
+                        };
+                        GLOBAL_EVENTS.push(evObj);
+                        if (isMyEvent) MY_PLANNING.push(evObj);
+                    });
+                    // Urutkan jadwal kita berdasarkan tanggal terdekat
+                    MY_PLANNING.sort((a,b) => new Date(a.start) - new Date(b.start));
+                }
             } catch (err) { console.error(err); }
         }
 
@@ -2665,42 +2709,43 @@ async function uploadImageToSupabase(file) {
             }, 500); 
         }
 
-        function submitWizard() {
+        async function submitWizard() {
             wizData.catPax = document.getElementById('wiz-cat-count').value || 0;
 
             const btn = document.getElementById('wiz-btn-next');
             btn.innerHTML = `<div class="loader-spin mx-auto"></div>`; btn.disabled = true;
 
-            setTimeout(() => {
-                const newId = `ev-c15-${Date.now()}`;
-                const newEvent = {
-                    id: newId, 
-                    title: `${activeLocation.type} - C15`, 
-                    type: activeLocation.type,
-                    start: wizData.date, 
-                    color: EVENT_COLORS[activeLocation.type], 
-                    extendedProps: { 
-                        branch: 'Cabang 15 Bekasi', 
-                        locId: activeLocation.id, 
-                        loc: activeLocation.name,
-                        timeStart: wizData.timeStart,
-                        timeEnd: wizData.timeEnd,
-                        pax: wizData.totalPax,
-                        busVendorId: parseInt(wizData.busVendor),
-                        busUnit: parseInt(wizData.busUnit),
-                        catVendorId: parseInt(wizData.catVendor),
-                        catPax: parseInt(wizData.catPax)
-                    }
+            try {
+                const payload = {
+                    cabang_id: sessionCabang.id,
+                    lokasi_id: activeLocation.id,
+                    tanggal: wizData.date,
+                    waktu_mulai: wizData.timeStart,
+                    waktu_selesai: wizData.timeEnd,
+                    total_pax: parseInt(wizData.totalPax) || 0,
+                    bus_vendor_id: wizData.busVendor ? parseInt(wizData.busVendor) : null,
+                    bus_unit: parseInt(wizData.busUnit) || 0,
+                    cat_vendor_id: wizData.catVendor ? parseInt(wizData.catVendor) : null,
+                    cat_pax: parseInt(wizData.catPax) || 0
                 };
 
-                MY_PLANNING.unshift(newEvent);
-                syncEventsToGlobal();
+                const { error } = await supabaseApp.from('events').insert([payload]);
+                if (error) throw error;
                 
                 showToast("Booking Berhasil! Jadwal telah dikunci dari cabang lain.", "success");
                 closeWizard();
-                renderInformation();
+                
+                await fetchMasterData(); // Tarik data event terbaru
+                renderInformation();     // Refresh dashboard depan
+                initMainCalendar();      // Update titik kalender
                 setTimeout(() => switchTab('information'), 500);
-            }, 1000);
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan jadwal event.", "error");
+            } finally {
+                btn.innerHTML = `<i class="fa-solid fa-save"></i> Selesaikan Booking`; 
+                btn.disabled = false;
+            }
         }
 
         function openEditBooking(eventId) {
@@ -2744,41 +2789,51 @@ async function uploadImageToSupabase(file) {
             openModal('edit-booking-modal');
         }
 
-        function submitEditBooking(e) {
+        async function submitEditBooking(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-submit-edit');
             btn.innerHTML = `<div class="loader-spin mx-auto"></div>`; btn.disabled = true;
 
-            setTimeout(() => {
+            try {
                 const id = document.getElementById('edit-ev-id').value;
-                const ev = MY_PLANNING.find(p => p.id === id);
-                if(ev) {
-                    ev.extendedProps.timeStart = document.getElementById('edit-time-start').value;
-                    ev.extendedProps.timeEnd = document.getElementById('edit-time-end').value;
-                    ev.extendedProps.busVendorId = parseInt(document.getElementById('edit-bus-select').value);
-                    ev.extendedProps.busUnit = parseInt(document.getElementById('edit-bus-count').value);
-                    ev.extendedProps.catVendorId = parseInt(document.getElementById('edit-cat-select').value);
-                    ev.extendedProps.catPax = parseInt(document.getElementById('edit-cat-count').value);
-                }
-                syncEventsToGlobal();
-                renderInformation();
-                closeModal('edit-booking-modal');
+                const payload = {
+                    waktu_mulai: document.getElementById('edit-time-start').value,
+                    waktu_selesai: document.getElementById('edit-time-end').value,
+                    bus_vendor_id: parseInt(document.getElementById('edit-bus-select').value) || null,
+                    bus_unit: parseInt(document.getElementById('edit-bus-count').value) || 0,
+                    cat_vendor_id: parseInt(document.getElementById('edit-cat-select').value) || null,
+                    cat_pax: parseInt(document.getElementById('edit-cat-count').value) || 0
+                };
+
+                const { error } = await supabaseApp.from('events').update(payload).eq('id', id);
+                if (error) throw error;
+
                 showToast("Perubahan event planning berhasil disimpan!", "success");
-                btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Perubahan`; btn.disabled = false;
-            }, 800);
+                closeModal('edit-booking-modal');
+                
+                await fetchMasterData(); // Tarik data event terbaru
+                renderInformation();
+                initMainCalendar();
+            } catch(err) {
+                console.error(err);
+                showToast("Gagal mengupdate event.", "error");
+            } finally {
+                btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Perubahan`; 
+                btn.disabled = false;
+            }
         }
 
         function initMainCalendar() {
             const calendarEl = document.getElementById('main-calendar-container');
             if (!calendarEl) return;
-            if (mainCalendar) { mainCalendar.render(); return; }
+            if (mainCalendar) { mainCalendar.destroy(); } // Hapus kalender lama biar refresh
 
             mainCalendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 initialDate: '2026-09-01',
                 fixedWeekCount: false,
                 headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
-                events: GLOBAL_EVENTS,
+                events: GLOBAL_EVENTS, // Langsung baca dari memori Supabase
                 eventContent: function(arg) {
                     return {
                         html: `<div class="flex flex-col p-1 overflow-hidden" title="${arg.event.title} di ${arg.event.extendedProps.loc}">
@@ -2789,16 +2844,15 @@ async function uploadImageToSupabase(file) {
                 },
                 eventClick: function(info) {
                     const ev = info.event;
-                    const isMyEvent = ev.extendedProps.branch === 'Cabang 15 Bekasi';
+                    const isMyEvent = ev.extendedProps.branch === sessionCabang.nama_cabang;
                     if(isMyEvent) {
                         openEditBooking(ev.id);
                     } else {
-                        // Buka Detail Modal Cabang Lain
                         document.getElementById('cal-det-title').innerText = ev.title;
                         document.getElementById('cal-det-branch').innerText = ev.extendedProps.branch;
                         document.getElementById('cal-det-loc').innerText = ev.extendedProps.loc;
                         
-                        const bus = MOCK_BUS.find(b => b.id === ev.extendedProps.busId);
+                        const bus = MOCK_BUS.find(b => b.id === ev.extendedProps.busVendorId);
                         if(bus) {
                             document.getElementById('cal-det-bus').innerText = `${bus.name} (${ev.extendedProps.busUnit} Unit)`;
                         } else {
