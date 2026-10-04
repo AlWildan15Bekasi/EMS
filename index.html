@@ -800,7 +800,10 @@
                             <button onclick="backToKonfigBus()" class="text-xs font-bold text-slate-500 hover:text-aw-blue px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i> Kembali ke Konfigurasi</button>
                             <div class="flex items-center gap-2">
                                 <button onclick="autoPlotBus()" class="bg-aw-yellow hover:bg-amber-400 text-aw-navy px-4 py-1.5 rounded-lg text-xs font-black shadow-sm transition flex items-center gap-2">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Plot Semua
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Plot
+                                </button>
+                                <button id="btn-save-plot" onclick="savePlottingToDB()" class="bg-aw-green hover:bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-xs font-black shadow-sm transition flex items-center gap-2">
+                                    <i class="fa-solid fa-save"></i> Simpan Plotting
                                 </button>
                             </div>
                         </div>
@@ -3128,30 +3131,65 @@
             return `${words[0]} ${words[1]}<br>${words[2]}`;
         }
 
-        function initVisualDenahBus() {
-            if (lastLoadedEventId !== activeEventManifest.id) {
-                const rawSiswa = typeof activeEventManifest.extendedProps.daftar_siswa === 'string' ? JSON.parse(activeEventManifest.extendedProps.daftar_siswa) : (activeEventManifest.extendedProps.daftar_siswa || []);
-                const rawGuru = typeof activeEventManifest.extendedProps.daftar_guru === 'string' ? JSON.parse(activeEventManifest.extendedProps.daftar_guru) : (activeEventManifest.extendedProps.daftar_guru || []);
+        async function savePlottingToDB() {
+            const btn = document.getElementById('btn-save-plot');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...`; 
+            btn.disabled = true;
 
-                pendingPlotSiswa = rawSiswa.map(rs => {
-                    const s = MOCK_STUDENTS.find(m => m.id === rs.id);
-                    return { ...rs, name: s ? s.name : 'Unknown', jenjang: s ? s.jenjang : '', class: s ? s.class : '' };
-                });
+            try {
+                // Tembakkan susunan kursi saat ini (yang ada di currentBusConfigs) ke Supabase
+                const { error } = await supabaseApp.from('events')
+                    .update({ konfigurasi_bus: currentBusConfigs })
+                    .eq('id', activeEventManifest.id);
                 
-                pendingPlotGuru = rawGuru.map(rg => {
-                    const g = MOCK_GURU.find(m => m.id === rg.id);
-                    return { ...rg, name: g ? g.name : 'Unknown', type: 'Guru' };
-                });
-
-                currentBusConfigs.forEach(b => {
-                    if(!b.passengers || b.passengers.length !== b.kapasitas) {
-                        b.passengers = new Array(b.kapasitas).fill(null);
-                    }
-                });
-                
-                lastLoadedEventId = activeEventManifest.id;
-                selectedPassenger = null;
+                if (error) throw error;
+                showToast("Hasil Plotting Kursi berhasil dikunci ke Database!", "success");
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan hasil plotting.", "error");
+            } finally {
+                btn.innerHTML = originalText; 
+                btn.disabled = false;
             }
+        }
+
+        function initVisualDenahBus() {
+            // Ambil semua daftar siswa dan guru yang diundang ke acara ini
+            const rawSiswa = typeof activeEventManifest.extendedProps.daftar_siswa === 'string' ? JSON.parse(activeEventManifest.extendedProps.daftar_siswa) : (activeEventManifest.extendedProps.daftar_siswa || []);
+            const rawGuru = typeof activeEventManifest.extendedProps.daftar_guru === 'string' ? JSON.parse(activeEventManifest.extendedProps.daftar_guru) : (activeEventManifest.extendedProps.daftar_guru || []);
+
+            let tempSiswa = rawSiswa.map(rs => {
+                const s = MOCK_STUDENTS.find(m => m.id === rs.id);
+                return { ...rs, name: s ? s.name : 'Unknown', jenjang: s ? s.jenjang : '', class: s ? s.class : '' };
+            });
+            
+            let tempGuru = rawGuru.map(rg => {
+                const g = MOCK_GURU.find(m => m.id === rg.id);
+                return { ...rg, name: g ? g.name : 'Unknown', type: 'Guru' };
+            });
+
+            // Persiapkan array kursi kosong untuk bus jika belum ada isinya
+            let seatedIds = new Set(); // Variabel untuk mengingat siapa saja yang sudah duduk
+            
+            currentBusConfigs.forEach(b => {
+                if(!b.passengers || b.passengers.length !== b.kapasitas) {
+                    b.passengers = new Array(b.kapasitas).fill(null);
+                } else {
+                    // Kalau ternyata kursinya udah terisi dari database, catat ID anak/gurunya
+                    b.passengers.forEach(p => {
+                        if(p && p.id) seatedIds.add(p.id);
+                    });
+                }
+            });
+
+            // Masukkan ke ruang tunggu HANYA orang-orang yang belum dapat kursi (belum ada di seatedIds)
+            pendingPlotSiswa = tempSiswa.filter(s => !seatedIds.has(s.id));
+            pendingPlotGuru = tempGuru.filter(g => !seatedIds.has(g.id));
+
+            lastLoadedEventId = activeEventManifest.id;
+            selectedPassenger = null;
+            
             renderVisualDenahBus();
         }
 
