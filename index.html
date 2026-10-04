@@ -3091,7 +3091,7 @@
                     document.getElementById('man-fase-2').classList.remove('hidden');
                     document.getElementById('man-fase-2').classList.add('flex');
                     
-                    renderVisualDenahBus(); // Eksekusi pelukis denah
+                    initVisualDenahBus(); // Eksekusi pelukis denah
                 }, 500);
 
             } catch (err) {
@@ -3113,97 +3113,138 @@
         
         let pendingPlotSiswa = [];
         let pendingPlotGuru = [];
+        let selectedPassenger = null;
+        let lastLoadedEventId = null;
+
+        // Helper pemotong nama otomatis (Maks 3 kata, format center 2 baris)
+        function formatName(name) {
+            if(!name) return '-';
+            let words = name.split(' ');
+            if (words.length === 1) return words[0];
+            if (words.length === 2) return `${words[0]}<br>${words[1]}`;
+            // Jika 3 kata atau lebih, gabung kata 1 & 2 di atas, kata ke 3 di bawah
+            return `${words[0]} ${words[1]}<br>${words[2]}`;
+        }
+
+        function initVisualDenahBus() {
+            if (lastLoadedEventId !== activeEventManifest.id) {
+                const rawSiswa = typeof activeEventManifest.extendedProps.daftar_siswa === 'string' ? JSON.parse(activeEventManifest.extendedProps.daftar_siswa) : (activeEventManifest.extendedProps.daftar_siswa || []);
+                const rawGuru = typeof activeEventManifest.extendedProps.daftar_guru === 'string' ? JSON.parse(activeEventManifest.extendedProps.daftar_guru) : (activeEventManifest.extendedProps.daftar_guru || []);
+
+                pendingPlotSiswa = rawSiswa.map(rs => {
+                    const s = MOCK_STUDENTS.find(m => m.id === rs.id);
+                    return { ...rs, name: s ? s.name : 'Unknown', jenjang: s ? s.jenjang : '', class: s ? s.class : '' };
+                });
+                
+                pendingPlotGuru = rawGuru.map(rg => {
+                    const g = MOCK_GURU.find(m => m.id === rg.id);
+                    return { ...rg, name: g ? g.name : 'Unknown', type: 'Guru' };
+                });
+
+                currentBusConfigs.forEach(b => {
+                    if(!b.passengers || b.passengers.length !== b.kapasitas) {
+                        b.passengers = new Array(b.kapasitas).fill(null);
+                    }
+                });
+                
+                lastLoadedEventId = activeEventManifest.id;
+                selectedPassenger = null;
+            }
+            renderVisualDenahBus();
+        }
 
         function renderVisualDenahBus() {
             const canvas = document.getElementById('canvas-bus-area');
-            const waitRoom = document.getElementById('waiting-room-list');
-            
-            // 1. Ambil data asli JSONB anak-anak dari tabel events
-            const rawSiswa = typeof activeEventManifest.extendedProps.daftar_siswa === 'string' ? JSON.parse(activeEventManifest.extendedProps.daftar_siswa) : (activeEventManifest.extendedProps.daftar_siswa || []);
-            const rawGuru = typeof activeEventManifest.extendedProps.daftar_guru === 'string' ? JSON.parse(activeEventManifest.extendedProps.daftar_guru) : (activeEventManifest.extendedProps.daftar_guru || []);
+            renderWaitingRoom(); 
 
-            // 2. Cocokkan ID JSONB dengan Master MOCK_STUDENTS agar dapat NAMA aslinya
-            pendingPlotSiswa = rawSiswa.map(rs => {
-                const s = MOCK_STUDENTS.find(m => m.id === rs.id);
-                return { ...rs, name: s ? s.name : 'Unknown', jenjang: s ? s.jenjang : '', class: s ? s.class : '' };
-            });
-            pendingPlotGuru = rawGuru.map(rg => {
-                const g = MOCK_GURU.find(m => m.id === rg.id);
-                return { ...rg, name: g ? g.name : 'Unknown Guru', type: 'Guru' };
-            });
-
-            // 3. Render Ruang Tunggu (Semua numpuk di sini sebelum di-plot)
-            renderWaitingRoom();
-
-            // 4. Gambar Layout Bus Fisiknya
             let busHtml = '';
-            currentBusConfigs.forEach((bus, index) => {
+            currentBusConfigs.forEach(bus => {
                 let colorTheme = bus.gender === 'Ikhwan' ? 'text-aw-blue' : (bus.gender === 'Akhwat' ? 'text-rose-500' : 'text-slate-600');
-                
-                // Kalkulasi baris (Kapasitas dibagi 4 atau 5)
-                const kursiPerBaris = bus.layout === '2-2' ? 4 : 5;
+                const is22 = bus.layout === '2-2';
+                const kursiPerBaris = is22 ? 4 : 5;
                 const totalBaris = Math.ceil(bus.kapasitas / kursiPerBaris);
+
+                let seatsHtml = '<div class="flex flex-col gap-2 p-2">';
+                let seatIndex = 0;
+
+                for (let r = 0; r < totalBaris; r++) {
+                    let isLastRow = (r === totalBaris - 1);
+                    seatsHtml += `<div class="flex justify-between gap-1 w-full">`;
+                    
+                    let cols = is22 ? 5 : 6;
+                    for (let c = 0; c < cols; c++) {
+                        if (seatIndex >= bus.kapasitas) {
+                            seatsHtml += `<div class="flex-1"></div>`; 
+                            continue;
+                        }
+
+                        if (!isLastRow && ((is22 && c === 2) || (!is22 && c === 2))) {
+                            seatsHtml += `<div class="w-4 shrink-0"></div>`; 
+                            continue;
+                        }
+
+                        let p = bus.passengers[seatIndex];
+                        let boxClass = p ? (p.type === 'Guru' ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-blue-50 border-blue-200 text-aw-navy') : 'bg-white border-slate-200 text-slate-400';
+                        let selClass = (selectedPassenger && selectedPassenger.source === 'bus' && selectedPassenger.busId === bus.id && selectedPassenger.seatIdx === seatIndex) ? 'ring-2 ring-aw-yellow ring-offset-1 border-aw-yellow z-10 scale-105 shadow-md' : '';
+                        
+                        let seatName = p ? formatName(p.name) : '<i class="fa-solid fa-plus opacity-30"></i>';
+                        let titleHover = p ? p.name : 'Kursi Kosong (Klik untuk isi)';
+
+                        seatsHtml += `
+                        <div onclick="handleSeatClick('${bus.id}', ${seatIndex})" title="${titleHover}" class="flex-1 h-10 ${boxClass} ${selClass} border rounded shadow-sm flex flex-col items-center justify-center text-[8.5px] leading-[1.15] font-bold cursor-pointer hover:border-aw-yellow transition-all overflow-hidden relative px-0.5 py-1">
+                            <span class="w-full text-center">${seatName}</span>
+                        </div>`;
+                        seatIndex++;
+                    }
+                    seatsHtml += `</div>`;
+                }
+                seatsHtml += '</div>';
 
                 busHtml += `
                 <div class="w-72 bg-white rounded-t-3xl rounded-b-xl shadow-lg border-2 border-slate-300 flex flex-col shrink-0 overflow-hidden relative">
-                    <!-- Dashboard Supir (Patokan Depan) -->
                     <div class="h-20 bg-slate-200 border-b-4 border-slate-300 relative shrink-0">
                         <div class="absolute inset-x-4 top-2 h-6 bg-cyan-100/50 border border-cyan-200 rounded-t-full shadow-inner opacity-60"></div>
                         <div class="absolute bottom-2 right-4 w-10 h-10 bg-slate-700 rounded-full border-4 border-slate-800 flex items-center justify-center shadow-lg"><i class="fa-solid fa-steering-wheel text-white/50 text-xs"></i></div>
                         <div class="absolute bottom-2 left-4 w-8 h-8 bg-slate-300 rounded border border-slate-400 flex items-center justify-center"><i class="fa-solid fa-user-astronaut text-slate-500 text-[10px]" title="Kernet"></i></div>
                     </div>
-                    
-                    <!-- Label Bus -->
                     <div class="p-2 bg-slate-800 text-center border-b-2 border-slate-900 shadow-md z-10">
                         <h4 class="text-white font-black text-sm uppercase tracking-widest">${bus.nama}</h4>
                         <p class="text-[9px] ${colorTheme} font-bold bg-white/10 px-2 py-0.5 rounded inline-block mt-0.5">${bus.gender} • ${bus.kapasitas} Kursi</p>
                     </div>
-
-                    <!-- Area Lorong & Bangku (Scrollable) -->
-                    <div class="flex-1 overflow-y-auto custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-slate-50 p-3 flex flex-col gap-2">
-                        <div id="bus-container-${bus.id}" class="space-y-2 min-h-[300px]">
-                            <!-- Kursi dilukis via Auto-Plot nanti -->
-                            <div class="w-full h-full flex items-center justify-center text-slate-300 text-xs font-bold border-2 border-dashed border-slate-300 rounded-xl bg-white/50 p-4 text-center">
-                                Klik Auto-Plot untuk memasukkan siswa ke kursi bus.
-                            </div>
-                        </div>
+                    <div class="flex-1 overflow-y-auto custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-slate-50 p-2 flex flex-col gap-2">
+                        ${seatsHtml}
                     </div>
                 </div>`;
             });
             
-            if(currentBusConfigs.length === 0) {
-                canvas.innerHTML = `<div class="m-auto text-slate-400 font-bold"><i class="fa-solid fa-bus-slash text-2xl mb-2 block text-center"></i>Konfigurasi bus kosong</div>`;
-            } else {
-                canvas.innerHTML = busHtml;
-            }
+            canvas.innerHTML = busHtml;
         }
 
         function renderWaitingRoom() {
             const waitRoom = document.getElementById('waiting-room-list');
             let total = pendingPlotGuru.length + pendingPlotSiswa.length;
             document.getElementById('wait-count').innerText = total;
-
             let html = '';
             
-            // Render Guru Dulu (Warna beda)
-            pendingPlotGuru.forEach(g => {
+            pendingPlotGuru.forEach((g, idx) => {
+                let selClass = (selectedPassenger && selectedPassenger.source === 'wait' && selectedPassenger.listType === 'Guru' && selectedPassenger.listIdx === idx) ? 'ring-2 ring-aw-yellow border-aw-yellow bg-yellow-50' : 'border-amber-200 bg-white hover:border-amber-400';
                 html += `
-                <div class="bg-white border border-amber-200 p-2 rounded-lg shadow-sm flex items-center gap-2 cursor-grab active:cursor-grabbing hover:border-amber-400 transition-colors">
+                <div onclick="handleWaitRoomClick('Guru', ${idx})" class="p-2 rounded-lg shadow-sm flex items-center gap-2 cursor-pointer transition-colors border ${selClass}">
                     <div class="w-6 h-6 rounded bg-amber-50 text-amber-600 flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-chalkboard-user"></i></div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-[10px] font-black text-slate-700 truncate">${g.name}</p>
+                        <p class="text-[10px] font-black text-slate-700 truncate" title="${g.name}">${g.name}</p>
                         <p class="text-[8px] font-bold text-amber-500 uppercase">Guru Pendamping</p>
                     </div>
                 </div>`;
             });
 
-            // Render Siswa
-            pendingPlotSiswa.forEach(s => {
+            pendingPlotSiswa.forEach((s, idx) => {
+                let selClass = (selectedPassenger && selectedPassenger.source === 'wait' && selectedPassenger.listType === 'Siswa' && selectedPassenger.listIdx === idx) ? 'ring-2 ring-aw-yellow border-aw-yellow bg-yellow-50' : 'border-slate-200 bg-white hover:border-aw-blue';
                 html += `
-                <div class="bg-white border border-slate-200 p-2 rounded-lg shadow-sm flex items-center gap-2 cursor-grab active:cursor-grabbing hover:border-aw-blue transition-colors">
+                <div onclick="handleWaitRoomClick('Siswa', ${idx})" class="p-2 rounded-lg shadow-sm flex items-center gap-2 cursor-pointer transition-colors border ${selClass}">
                     <div class="w-6 h-6 rounded bg-slate-100 text-slate-400 flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-user"></i></div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-[10px] font-bold text-slate-700 truncate">${s.name}</p>
+                        <p class="text-[10px] font-bold text-slate-700 truncate" title="${s.name}">${s.name}</p>
                         <p class="text-[8px] font-bold text-aw-blue uppercase">${s.class}</p>
                     </div>
                 </div>`;
@@ -3213,15 +3254,114 @@
             waitRoom.innerHTML = html;
         }
 
-        function autoPlotBus() {
-            showToast("Bim salabim! Siswa sedang dimasukkan ke Bus...", "info");
-            
-            // TBD: Logika menaruh array pendingPlotSiswa ke dalam kotak-kotak bus di iterasi berikutnya
-            setTimeout(() => {
-                showToast("Ini baru simulasi tombol. Visual kursi aslinya kita kerjakan setelah ini!", "success");
-            }, 1500);
+        function handleWaitRoomClick(type, idx) {
+            let pList = type === 'Guru' ? pendingPlotGuru : pendingPlotSiswa;
+            if(selectedPassenger && selectedPassenger.source === 'wait' && selectedPassenger.listType === type && selectedPassenger.listIdx === idx) {
+                selectedPassenger = null; 
+            } else {
+                selectedPassenger = { source: 'wait', data: pList[idx], listType: type, listIdx: idx };
+            }
+            renderVisualDenahBus();
         }
 
+        function handleSeatClick(busId, seatIdx) {
+            let bus = currentBusConfigs.find(b => b.id === busId);
+            let currentSeatData = bus.passengers[seatIdx];
+
+            if (!selectedPassenger) {
+                if(currentSeatData) {
+                    selectedPassenger = { source: 'bus', data: currentSeatData, busId: busId, seatIdx: seatIdx };
+                    renderVisualDenahBus();
+                }
+                return;
+            }
+
+            if (selectedPassenger.source === 'wait') {
+                if (currentSeatData) {
+                    if(currentSeatData.type === 'Guru') pendingPlotGuru.push(currentSeatData);
+                    else pendingPlotSiswa.push(currentSeatData);
+                }
+                let pList = selectedPassenger.listType === 'Guru' ? pendingPlotGuru : pendingPlotSiswa;
+                pList.splice(selectedPassenger.listIdx, 1);
+                bus.passengers[seatIdx] = selectedPassenger.data;
+            } 
+            else if (selectedPassenger.source === 'bus') {
+                let sourceBus = currentBusConfigs.find(b => b.id === selectedPassenger.busId);
+                sourceBus.passengers[selectedPassenger.seatIdx] = currentSeatData; 
+                bus.passengers[seatIdx] = selectedPassenger.data;
+            }
+
+            selectedPassenger = null;
+            renderVisualDenahBus();
+        }
+
+        function autoPlotBus() {
+            const btn = document.querySelector('button[onclick="autoPlotBus()"]');
+            if(btn) { btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Memproses...`; btn.disabled = true; }
+            
+            setTimeout(() => {
+                // 1. Reset: Kembalikan semua penumpang dari bus ke ruang tunggu
+                currentBusConfigs.forEach(bus => {
+                    if(!bus.passengers) bus.passengers = new Array(bus.kapasitas).fill(null);
+                    for(let i=0; i<bus.kapasitas; i++) {
+                        if(bus.passengers[i]) {
+                            if(bus.passengers[i].type === 'Guru') pendingPlotGuru.push(bus.passengers[i]);
+                            else pendingPlotSiswa.push(bus.passengers[i]);
+                            bus.passengers[i] = null;
+                        }
+                    }
+                });
+
+                // 2. Sort siswa berdasarkan kelas agar bergerombol
+                pendingPlotSiswa.sort((a,b) => a.class.localeCompare(b.class));
+
+                // 3. Plot Guru di depan (Maks 2 per bus agar merata)
+                currentBusConfigs.forEach(bus => {
+                    let seatIdx = 0;
+                    let guruCount = 0;
+                    while(pendingPlotGuru.length > 0 && seatIdx < bus.kapasitas && guruCount < 2) {
+                        bus.passengers[seatIdx] = pendingPlotGuru.shift();
+                        seatIdx++;
+                        guruCount++;
+                    }
+                });
+                
+                // Jika masih ada sisa guru, paksa masuk ke kursi kosong terdepan
+                currentBusConfigs.forEach(bus => {
+                    for(let i=0; i<bus.kapasitas; i++) {
+                        if(!bus.passengers[i] && pendingPlotGuru.length > 0) {
+                            bus.passengers[i] = pendingPlotGuru.shift();
+                        }
+                    }
+                });
+
+                // 4. Plot Siswa (Dengan aturan 1-5 bangku sisa)
+                currentBusConfigs.forEach(bus => {
+                    let lastClassInBus = null;
+                    for(let i=0; i<bus.kapasitas; i++) {
+                        if(bus.passengers[i]) continue; 
+                        if(pendingPlotSiswa.length === 0) break;
+
+                        let nextSiswa = pendingPlotSiswa[0];
+                        let sisaKursi = bus.kapasitas - i;
+
+                        // ATURAN: Jika kelas berganti dan sisa kursi <= 5, kosongkan kursi sisanya!
+                        if (lastClassInBus && lastClassInBus !== nextSiswa.class && sisaKursi <= 5) {
+                            break; // Lanjut ke bus berikutnya
+                        }
+
+                        bus.passengers[i] = pendingPlotSiswa.shift();
+                        lastClassInBus = nextSiswa.class;
+                    }
+                });
+                
+                selectedPassenger = null;
+                renderVisualDenahBus();
+                showToast("Selesai! Peserta di-plot otomatis sesuai rombel kelas.", "success");
+                
+                if(btn) { btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Plot Semua`; btn.disabled = false; }
+            }, 600);
+        }
         function openManifestModal(eventId) {
             const ev = MY_PLANNING.find(p => p.id === eventId);
             if(!ev) return;
