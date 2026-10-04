@@ -2353,13 +2353,33 @@
         function populateWizardRombel() {
             const rombelList = document.getElementById('wiz-rombel-list');
             let groupedClasses = {};
-            MOCK_STUDENTS.forEach(s => { groupedClasses[s.class] = (groupedClasses[s.class] || 0) + 1; });
+            // Kelompokkan siswa berdasarkan kelasnya
+            MOCK_STUDENTS.forEach(s => { 
+                if(!groupedClasses[s.class]) groupedClasses[s.class] = [];
+                groupedClasses[s.class].push(s);
+            });
+            
             let rHtml = '';
             Object.keys(groupedClasses).forEach(cls => {
+                let studentsHtml = '';
+                // Buat list anak-anak di dalam kelas tersebut
+                groupedClasses[cls].forEach(siswa => {
+                    studentsHtml += `
+                        <div class="flex items-center gap-2 pl-8 py-2 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+                            <input type="checkbox" id="cb-siswa-${siswa.id}" class="wiz-cb-siswa w-3.5 h-3.5 text-aw-blue bg-white border-slate-300 rounded focus:ring-aw-blue" value="${siswa.id}" onchange="calculatePax()">
+                            <label for="cb-siswa-${siswa.id}" class="flex-1 text-xs font-medium text-slate-600 cursor-pointer select-none">${siswa.name}</label>
+                        </div>`;
+                });
+
                 rHtml += `
-                    <div class="flex items-center gap-3 p-2.5 rounded-lg border border-slate-200 hover:bg-white transition-colors shadow-sm bg-white">
-                        <input type="checkbox" id="cb-cls-${cls}" class="wiz-cb-pax w-4 h-4 text-aw-blue bg-slate-100 border-slate-300 rounded focus:ring-aw-blue" value="${groupedClasses[cls]}" onchange="calculatePax()">
-                        <label for="cb-cls-${cls}" class="flex-1 text-sm font-bold text-slate-700 cursor-pointer select-none">Kelas ${cls} <span class="text-[10px] text-slate-400 font-medium ml-1">(${groupedClasses[cls]} Siswa)</span></label>
+                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm mb-3">
+                        <div class="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 transition-colors border-b border-slate-200">
+                            <input type="checkbox" id="cb-cls-${cls}" class="w-4 h-4 text-aw-blue bg-white border-slate-300 rounded focus:ring-aw-blue" onchange="toggleKelasSiswa('${cls}', this.checked)">
+                            <label for="cb-cls-${cls}" class="flex-1 text-sm font-bold text-slate-700 cursor-pointer select-none">Kelas ${cls} <span class="text-[10px] text-slate-400 font-medium ml-1">(${groupedClasses[cls].length} Siswa)</span></label>
+                        </div>
+                        <div id="list-siswa-${cls}" class="hidden flex-col bg-white">
+                            ${studentsHtml}
+                        </div>
                     </div>`;
             });
             rombelList.innerHTML = rHtml;
@@ -2368,12 +2388,30 @@
             let gHtml = '';
             MOCK_GURU.forEach(g => {
                 gHtml += `
-                    <div class="flex items-center gap-3 p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-amber-300 transition-colors">
-                        <input type="checkbox" id="cb-gr-${g.id}" class="wiz-cb-pax w-4 h-4 text-amber-500 bg-slate-100 border-slate-300 rounded focus:ring-amber-500" value="1" onchange="calculatePax()">
+                    <div class="flex items-center gap-3 p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-amber-300 transition-colors">
+                        <input type="checkbox" id="cb-gr-${g.id}" class="wiz-cb-guru w-4 h-4 text-amber-500 bg-slate-100 border-slate-300 rounded focus:ring-amber-500" value="${g.id}" onchange="calculatePax()">
                         <label for="cb-gr-${g.id}" class="flex-1 text-xs font-bold text-slate-700 cursor-pointer select-none">${g.name}</label>
                     </div>`;
             });
             guruList.innerHTML = gHtml;
+        }
+
+        function toggleKelasSiswa(cls, isChecked) {
+            const listContainer = document.getElementById(`list-siswa-${cls}`);
+            const checkboxes = listContainer.querySelectorAll('.wiz-cb-siswa');
+            
+            // Mekar/Kuncupkan daftar nama anak
+            if (isChecked) {
+                listContainer.classList.remove('hidden');
+                listContainer.classList.add('flex');
+            } else {
+                listContainer.classList.add('hidden');
+                listContainer.classList.remove('flex');
+            }
+            
+            // Centang/Hapus centang semua anak secara masif
+            checkboxes.forEach(cb => cb.checked = isChecked);
+            calculatePax(); // Hitung ulang total
         }
 
         function renderBusCatalog() {
@@ -2424,9 +2462,6 @@
             container.innerHTML = html;
         }
 
-        // ==========================================
-        // WIZARD BOOKING LOGIC
-        // ==========================================
         function checkStep3() {
             const busCount = document.getElementById('wiz-bus-count').value;
             if(wizData.busVendor && busCount > 0) { activateNextBtn(true, `Lanjut Pilih Konsumsi ➔`); }
@@ -2440,11 +2475,24 @@
         }
 
         function calculatePax() {
-            let total = 0;
-            document.querySelectorAll('.wiz-cb-pax:checked').forEach(cb => { total += parseInt(cb.value); });
+            // Bersihkan array lama
+            wizData.pesertaSiswa = [];
+            wizData.pesertaGuru = [];
+            
+            // Loop & kumpulkan semua ID Anak dan Guru yang dicentang
+            document.querySelectorAll('.wiz-cb-siswa:checked').forEach(cb => {
+                wizData.pesertaSiswa.push(parseInt(cb.value));
+            });
+            document.querySelectorAll('.wiz-cb-guru:checked').forEach(cb => {
+                wizData.pesertaGuru.push(parseInt(cb.value));
+            });
+
+            // Kalkulasi Total Individu Nyata
+            let total = wizData.pesertaSiswa.length + wizData.pesertaGuru.length;
             wizData.totalPax = total;
             document.getElementById('wiz-total-pax').innerText = `${total} Orang`;
             document.getElementById('wiz-cat-hint').innerText = total;
+            
             if(total > 0 && wizData.date) { activateNextBtn(true, `Lanjut Pilih Transport ➔`); }
             else { activateNextBtn(false); }
         }
@@ -2452,9 +2500,9 @@
         function openBookingWizard(locId) {
             activeLocation = MOCK_LOCATIONS.find(l => l.id === locId);
             wizardStep = 1;
-            wizData = { date: null, timeStart: '07:00', timeEnd: '15:00', totalPax: 0, busVendor: null, busUnit: 0, catVendor: null, catPax: 0 };
+            wizData = { date: null, timeStart: '07:00', timeEnd: '15:00', totalPax: 0, busVendor: null, busUnit: 0, catVendor: null, catPax: 0, pesertaSiswa: [], pesertaGuru: [] };
             
-            document.querySelectorAll('.wiz-cb-pax').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.wiz-cb-siswa, .wiz-cb-guru').forEach(cb => cb.checked = false);
             calculatePax();
             document.getElementById('wiz-check-result').innerHTML = `<div class="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-300 mb-4 text-2xl"><i class="fa-regular fa-hand-pointer"></i></div><p class="text-sm font-bold text-slate-500">Pilih tanggal di kalender<br>untuk melihat status.</p>`;
             document.getElementById('wiz-bus-count').value = '';
@@ -2571,8 +2619,8 @@
 
             miniCalendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
-                initialDate: '2026-09-01', // Lock to Sept 2026
-                fixedWeekCount: false, // Make it compact, only show weeks in the month
+                initialDate: '2026-09-01', 
+                fixedWeekCount: false, 
                 headerToolbar: { left: 'prev', center: 'title', right: 'next' },
                 contentHeight: 'auto',
                 events: GLOBAL_EVENTS,
@@ -2607,7 +2655,7 @@
                             </p>
                             <p class="text-red-500 text-xs font-bold mt-4">Pilih tanggal lain di kalender yang masih kosong.</p>
                         </div>`;
-                    wizData.date = null; // Kunci, gabisa lanjut
+                    wizData.date = null; 
                     activateNextBtn(false);
                 } else {
                     wizData.date = dateStr;
@@ -2630,6 +2678,10 @@
             btn.innerHTML = `<div class="loader-spin mx-auto"></div>`; btn.disabled = true;
 
             try {
+                // 1. Konversi array ID integer ke format Object JSONB (Nilai awal untuk Absensi & Plotting Bus nanti)
+                const jsonSiswa = wizData.pesertaSiswa.map(id => ({ id: id, hadir: true, no_bus: null, makan: true }));
+                const jsonGuru = wizData.pesertaGuru.map(id => ({ id: id, hadir: true, no_bus: null, makan: true }));
+
                 const payload = {
                     cabang_id: sessionCabang.id,
                     lokasi_id: activeLocation.id,
@@ -2640,7 +2692,9 @@
                     bus_vendor_id: wizData.busVendor ? parseInt(wizData.busVendor) : null,
                     bus_unit: parseInt(wizData.busUnit) || 0,
                     cat_vendor_id: wizData.catVendor ? parseInt(wizData.catVendor) : null,
-                    cat_pax: parseInt(wizData.catPax) || 0
+                    cat_pax: parseInt(wizData.catPax) || 0,
+                    daftar_siswa: jsonSiswa, // Lempar JSONB ke Supabase
+                    daftar_guru: jsonGuru    // Lempar JSONB ke Supabase
                 };
 
                 const { error } = await supabaseApp.from('events').insert([payload]);
@@ -2661,7 +2715,6 @@
                 btn.disabled = false;
             }
         }
-
         // ==========================================
         // EDIT BOOKING LOGIC
         // ==========================================
