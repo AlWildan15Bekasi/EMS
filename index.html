@@ -772,29 +772,61 @@
                 </div>
 
                <!-- Tab: Konfigurasi & Plotting Bus (STAGE 9) -->
-                <div id="tab-man-bus" class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50 custom-scrollbar relative">
-                    <div class="flex justify-between items-center mb-6">
-                        <div>
-                            <h3 class="font-black text-slate-800 text-lg">Konfigurasi Armada Bus</h3>
-                            <p class="text-xs text-slate-500 font-medium mt-0.5">Atur layout tempat duduk dan plot siswa secara otomatis atau manual.</p>
-                        </div>
-                        <button onclick="openModal('add-bus-modal')" class="bg-aw-green hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-2">
-                            <i class="fa-solid fa-plus"></i> Tambah Bus
-                        </button>
-                    </div>
+                <div id="tab-man-bus" class="flex-1 overflow-hidden bg-slate-50 flex flex-col">
                     
-                    <!-- Tempat render kartu bus -->
-                    <div id="manifest-bus-list" class="grid grid-cols-1 xl:grid-cols-2 gap-5">
-                        <div class="col-span-full border-2 border-dashed border-slate-300 rounded-2xl p-10 flex flex-col items-center justify-center text-center">
-                            <div class="w-20 h-20 bg-blue-50 text-aw-blue rounded-full flex items-center justify-center text-3xl mb-4 shadow-sm">
-                                <i class="fa-solid fa-bus"></i>
+                    <!-- FASE 1: Konfigurasi Armada -->
+                    <div id="man-fase-1" class="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar block transition-all duration-500">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 class="font-black text-slate-800 text-lg">Konfigurasi Armada Bus</h3>
+                                <p class="text-xs text-slate-500 font-medium mt-0.5">Atur layout tempat duduk untuk plot siswa.</p>
                             </div>
-                            <h4 class="font-black text-slate-700 text-lg mb-1">Belum Ada Armada</h4>
-                            <p class="text-sm text-slate-500 max-w-md">Silakan klik "Tambah Bus" untuk membuat skema tempat duduk (2-2 atau 2-3).</p>
+                            <button onclick="openModal('add-bus-modal')" class="bg-aw-green hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-2 shrink-0">
+                                <i class="fa-solid fa-plus"></i> Tambah Bus
+                            </button>
+                        </div>
+                        
+                        <div id="manifest-bus-list" class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                            <!-- Diisi JS -->
+                        </div>
+                        
+                        <button id="btn-simpan-konfig-bus" onclick="saveKonfigurasiBusToDB()" class="hidden w-full mt-6 py-3.5 bg-aw-navy hover:bg-blue-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 uppercase tracking-wider"><i class="fa-solid fa-arrow-right"></i> Lanjut Ke Visual Denah</button>
+                    </div>
+
+                    <!-- FASE 2 & 3: Visual Denah Bus -->
+                    <div id="man-fase-2" class="flex-1 hidden overflow-hidden flex-col bg-slate-100 transition-all duration-500">
+                        <!-- Toolbar Denah -->
+                        <div class="bg-white p-3 border-b border-slate-200 flex justify-between items-center shadow-sm shrink-0">
+                            <button onclick="backToKonfigBus()" class="text-xs font-bold text-slate-500 hover:text-aw-blue px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i> Kembali ke Konfigurasi</button>
+                            <div class="flex items-center gap-2">
+                                <button onclick="autoPlotBus()" class="bg-aw-yellow hover:bg-amber-400 text-aw-navy px-4 py-1.5 rounded-lg text-xs font-black shadow-sm transition flex items-center gap-2">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Plot Semua
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Area Workspace Denah -->
+                        <div class="flex-1 overflow-hidden flex flex-col md:flex-row p-4 gap-4">
+                            
+                            <!-- Ruang Tunggu (Siswa/Guru yang belum dapet bus) -->
+                            <div class="w-full md:w-64 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col overflow-hidden shrink-0">
+                                <div class="bg-slate-800 text-white p-3 shrink-0 flex justify-between items-center">
+                                    <h4 class="font-bold text-xs"><i class="fa-solid fa-users text-aw-yellow mr-1"></i> Ruang Tunggu</h4>
+                                    <span id="wait-count" class="text-[10px] bg-slate-700 px-2 py-0.5 rounded font-black">0</span>
+                                </div>
+                                <div id="waiting-room-list" class="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar bg-slate-50">
+                                    <!-- Diisi JS Anak/Guru -->
+                                </div>
+                            </div>
+
+                            <!-- Kanvas Bus -->
+                            <div id="canvas-bus-area" class="flex-1 overflow-x-auto overflow-y-auto bg-slate-200/50 rounded-2xl border border-slate-200 p-4 flex gap-6 custom-scrollbar relative">
+                                <!-- Diisi JS Denah Bus -->
+                            </div>
+
                         </div>
                     </div>
-                    
-                    <button id="btn-simpan-konfig-bus" onclick="saveKonfigurasiBusToDB()" class="hidden w-full mt-6 py-3.5 bg-aw-navy hover:bg-blue-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 uppercase tracking-wider"><i class="fa-solid fa-save"></i> Simpan Konfigurasi & Lanjut Denah</button>
+
                 </div>
 
                 <!-- Tab: E-Absensi & Konsumsi (STAGE 8) -->
@@ -3044,25 +3076,150 @@
             btn.innerHTML = `<div class="loader-spin mx-auto"></div>`; btn.disabled = true;
 
             try {
-                // Simpan format JSON ke kolom konfigurasi_bus di tabel events
+                // Simpan format JSON ke kolom konfigurasi_bus
                 const { error } = await supabaseApp.from('events')
                     .update({ konfigurasi_bus: currentBusConfigs })
                     .eq('id', activeEventManifest.id);
                 
                 if (error) throw error;
                 
-                showToast("Konfigurasi armada berhasil disimpan ke Database!", "success");
-                // TBD: Lanjut buka fitur menggambar denah bus (Stage 9 - Phase 3)
+                showToast("Konfigurasi armada tersimpan. Membuka denah...", "success");
+                
+                // Transisi UI ke Visual Denah
                 setTimeout(() => {
-                    alert("Akan segera membuka Visual Denah Bus..."); 
-                }, 800);
+                    document.getElementById('man-fase-1').classList.add('hidden');
+                    document.getElementById('man-fase-2').classList.remove('hidden');
+                    document.getElementById('man-fase-2').classList.add('flex');
+                    
+                    renderVisualDenahBus(); // Eksekusi pelukis denah
+                }, 500);
+
             } catch (err) {
                 console.error(err);
                 showToast("Gagal menyimpan konfigurasi bus.", "error");
             } finally {
-                btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Konfigurasi & Lanjut Denah`; 
+                btn.innerHTML = `<i class="fa-solid fa-arrow-right"></i> Lanjut Ke Visual Denah`; 
                 btn.disabled = false;
             }
+        }
+
+        function backToKonfigBus() {
+            document.getElementById('man-fase-2').classList.add('hidden');
+            document.getElementById('man-fase-2').classList.remove('flex');
+            document.getElementById('man-fase-1').classList.remove('hidden');
+        }
+
+        // --- INTI DARI STAGE 9: MELUKIS DENAH BUS ---
+        
+        let pendingPlotSiswa = [];
+        let pendingPlotGuru = [];
+
+        function renderVisualDenahBus() {
+            const canvas = document.getElementById('canvas-bus-area');
+            const waitRoom = document.getElementById('waiting-room-list');
+            
+            // 1. Ambil data asli JSONB anak-anak dari tabel events
+            const rawSiswa = typeof activeEventManifest.extendedProps.daftar_siswa === 'string' ? JSON.parse(activeEventManifest.extendedProps.daftar_siswa) : (activeEventManifest.extendedProps.daftar_siswa || []);
+            const rawGuru = typeof activeEventManifest.extendedProps.daftar_guru === 'string' ? JSON.parse(activeEventManifest.extendedProps.daftar_guru) : (activeEventManifest.extendedProps.daftar_guru || []);
+
+            // 2. Cocokkan ID JSONB dengan Master MOCK_STUDENTS agar dapat NAMA aslinya
+            pendingPlotSiswa = rawSiswa.map(rs => {
+                const s = MOCK_STUDENTS.find(m => m.id === rs.id);
+                return { ...rs, name: s ? s.name : 'Unknown', jenjang: s ? s.jenjang : '', class: s ? s.class : '' };
+            });
+            pendingPlotGuru = rawGuru.map(rg => {
+                const g = MOCK_GURU.find(m => m.id === rg.id);
+                return { ...rg, name: g ? g.name : 'Unknown Guru', type: 'Guru' };
+            });
+
+            // 3. Render Ruang Tunggu (Semua numpuk di sini sebelum di-plot)
+            renderWaitingRoom();
+
+            // 4. Gambar Layout Bus Fisiknya
+            let busHtml = '';
+            currentBusConfigs.forEach((bus, index) => {
+                let colorTheme = bus.gender === 'Ikhwan' ? 'text-aw-blue' : (bus.gender === 'Akhwat' ? 'text-rose-500' : 'text-slate-600');
+                
+                // Kalkulasi baris (Kapasitas dibagi 4 atau 5)
+                const kursiPerBaris = bus.layout === '2-2' ? 4 : 5;
+                const totalBaris = Math.ceil(bus.kapasitas / kursiPerBaris);
+
+                busHtml += `
+                <div class="w-72 bg-white rounded-t-3xl rounded-b-xl shadow-lg border-2 border-slate-300 flex flex-col shrink-0 overflow-hidden relative">
+                    <!-- Dashboard Supir (Patokan Depan) -->
+                    <div class="h-20 bg-slate-200 border-b-4 border-slate-300 relative shrink-0">
+                        <div class="absolute inset-x-4 top-2 h-6 bg-cyan-100/50 border border-cyan-200 rounded-t-full shadow-inner opacity-60"></div>
+                        <div class="absolute bottom-2 right-4 w-10 h-10 bg-slate-700 rounded-full border-4 border-slate-800 flex items-center justify-center shadow-lg"><i class="fa-solid fa-steering-wheel text-white/50 text-xs"></i></div>
+                        <div class="absolute bottom-2 left-4 w-8 h-8 bg-slate-300 rounded border border-slate-400 flex items-center justify-center"><i class="fa-solid fa-user-astronaut text-slate-500 text-[10px]" title="Kernet"></i></div>
+                    </div>
+                    
+                    <!-- Label Bus -->
+                    <div class="p-2 bg-slate-800 text-center border-b-2 border-slate-900 shadow-md z-10">
+                        <h4 class="text-white font-black text-sm uppercase tracking-widest">${bus.nama}</h4>
+                        <p class="text-[9px] ${colorTheme} font-bold bg-white/10 px-2 py-0.5 rounded inline-block mt-0.5">${bus.gender} • ${bus.kapasitas} Kursi</p>
+                    </div>
+
+                    <!-- Area Lorong & Bangku (Scrollable) -->
+                    <div class="flex-1 overflow-y-auto custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-slate-50 p-3 flex flex-col gap-2">
+                        <div id="bus-container-${bus.id}" class="space-y-2 min-h-[300px]">
+                            <!-- Kursi dilukis via Auto-Plot nanti -->
+                            <div class="w-full h-full flex items-center justify-center text-slate-300 text-xs font-bold border-2 border-dashed border-slate-300 rounded-xl bg-white/50 p-4 text-center">
+                                Klik Auto-Plot untuk memasukkan siswa ke kursi bus.
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            
+            if(currentBusConfigs.length === 0) {
+                canvas.innerHTML = `<div class="m-auto text-slate-400 font-bold"><i class="fa-solid fa-bus-slash text-2xl mb-2 block text-center"></i>Konfigurasi bus kosong</div>`;
+            } else {
+                canvas.innerHTML = busHtml;
+            }
+        }
+
+        function renderWaitingRoom() {
+            const waitRoom = document.getElementById('waiting-room-list');
+            let total = pendingPlotGuru.length + pendingPlotSiswa.length;
+            document.getElementById('wait-count').innerText = total;
+
+            let html = '';
+            
+            // Render Guru Dulu (Warna beda)
+            pendingPlotGuru.forEach(g => {
+                html += `
+                <div class="bg-white border border-amber-200 p-2 rounded-lg shadow-sm flex items-center gap-2 cursor-grab active:cursor-grabbing hover:border-amber-400 transition-colors">
+                    <div class="w-6 h-6 rounded bg-amber-50 text-amber-600 flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-chalkboard-user"></i></div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[10px] font-black text-slate-700 truncate">${g.name}</p>
+                        <p class="text-[8px] font-bold text-amber-500 uppercase">Guru Pendamping</p>
+                    </div>
+                </div>`;
+            });
+
+            // Render Siswa
+            pendingPlotSiswa.forEach(s => {
+                html += `
+                <div class="bg-white border border-slate-200 p-2 rounded-lg shadow-sm flex items-center gap-2 cursor-grab active:cursor-grabbing hover:border-aw-blue transition-colors">
+                    <div class="w-6 h-6 rounded bg-slate-100 text-slate-400 flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-user"></i></div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[10px] font-bold text-slate-700 truncate">${s.name}</p>
+                        <p class="text-[8px] font-bold text-aw-blue uppercase">${s.class}</p>
+                    </div>
+                </div>`;
+            });
+
+            if(total === 0) html = `<div class="text-center p-4 text-slate-400 text-xs font-bold italic">Semua sudah ter-plot!</div>`;
+            waitRoom.innerHTML = html;
+        }
+
+        function autoPlotBus() {
+            showToast("Bim salabim! Siswa sedang dimasukkan ke Bus...", "info");
+            
+            // TBD: Logika menaruh array pendingPlotSiswa ke dalam kotak-kotak bus di iterasi berikutnya
+            setTimeout(() => {
+                showToast("Ini baru simulasi tombol. Visual kursi aslinya kita kerjakan setelah ini!", "success");
+            }, 1500);
         }
 
         function openManifestModal(eventId) {
