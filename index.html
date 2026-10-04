@@ -2685,6 +2685,7 @@
                 const payload = {
                     cabang_id: sessionCabang.id,
                     lokasi_id: activeLocation.id,
+                    tipe_event: activeLocation.type, // <--- Baris ini yang ditambahkan
                     tanggal: wizData.date,
                     waktu_mulai: wizData.timeStart,
                     waktu_selesai: wizData.timeEnd,
@@ -2693,8 +2694,8 @@
                     bus_unit: parseInt(wizData.busUnit) || 0,
                     cat_vendor_id: wizData.catVendor ? parseInt(wizData.catVendor) : null,
                     cat_pax: parseInt(wizData.catPax) || 0,
-                    daftar_siswa: jsonSiswa, // Lempar JSONB ke Supabase
-                    daftar_guru: jsonGuru    // Lempar JSONB ke Supabase
+                    daftar_siswa: jsonSiswa,
+                    daftar_guru: jsonGuru
                 };
 
                 const { error } = await supabaseApp.from('events').insert([payload]);
