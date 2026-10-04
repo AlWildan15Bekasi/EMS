@@ -733,6 +733,84 @@
         </div>
     </div>
 
+    <!-- MODAL MANIFEST & ABSENSI (STAGE 8 & 9) -->
+    <div id="manifest-modal" class="hidden fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-2 sm:p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-50 rounded-2xl sm:rounded-3xl w-full max-w-6xl h-[95vh] shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col relative overflow-hidden border border-slate-200">
+            
+            <!-- Modal Header -->
+            <div class="bg-white p-4 sm:p-6 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-aw-navy text-white rounded-xl flex items-center justify-center text-xl shadow-md">
+                        <i class="fa-solid fa-bus-simple"></i>
+                    </div>
+                    <div>
+                        <h2 id="man-ev-title" class="font-black text-aw-navy text-xl leading-tight">Nama Event Here</h2>
+                        <p id="man-ev-info" class="text-xs font-bold text-slate-500 mt-1"><i class="fa-solid fa-location-dot mr-1"></i> Lokasi • Tanggal</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <div class="bg-blue-50 border border-blue-100 px-4 py-2 rounded-xl flex items-center gap-3 w-full sm:w-auto justify-center">
+                        <div class="text-center">
+                            <p class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Total Pax</p>
+                            <p id="man-ev-pax" class="text-sm font-black text-aw-blue">0</p>
+                        </div>
+                    </div>
+                    <button onclick="closeManifestModal()" class="w-12 h-12 bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl flex items-center justify-center transition-colors shadow-sm"><i class="fa-solid fa-times text-lg"></i></button>
+                </div>
+            </div>
+
+            <!-- Modal Content & Tabs -->
+            <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
+                <!-- Sidebar Menu (Tabs) -->
+                <div class="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-slate-200 shrink-0 flex flex-row md:flex-col overflow-x-auto hide-scrollbar p-3 gap-2">
+                    <button id="btn-tab-man-bus" onclick="switchManifestTab('bus')" class="flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-xl bg-aw-navy text-white font-bold text-sm shadow-md transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-truck-front w-5"></i> Plotting Bus
+                    </button>
+                    <button id="btn-tab-man-absen" onclick="switchManifestTab('absen')" class="flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-sm transition-all border border-slate-200 whitespace-nowrap">
+                        <i class="fa-solid fa-user-check w-5"></i> E-Absensi
+                    </button>
+                </div>
+
+                <!-- Tab: Konfigurasi & Plotting Bus (STAGE 9) -->
+                <div id="tab-man-bus" class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50 custom-scrollbar">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="font-black text-slate-800 text-lg">Konfigurasi Armada Bus</h3>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">Atur layout tempat duduk dan plot siswa secara otomatis atau manual.</p>
+                        </div>
+                        <button class="bg-aw-green hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Tambah Bus
+                        </button>
+                    </div>
+                    <div class="border-2 border-dashed border-slate-300 rounded-2xl p-10 flex flex-col items-center justify-center text-center">
+                        <div class="w-20 h-20 bg-blue-50 text-aw-blue rounded-full flex items-center justify-center text-3xl mb-4 shadow-sm">
+                            <i class="fa-solid fa-bus"></i>
+                        </div>
+                        <h4 class="font-black text-slate-700 text-lg mb-1">Belum Ada Armada</h4>
+                        <p class="text-sm text-slate-500 max-w-md">Silakan klik "Tambah Bus" untuk membuat skema tempat duduk (2-2 atau 2-3).</p>
+                    </div>
+                </div>
+
+                <!-- Tab: E-Absensi & Konsumsi (STAGE 8) -->
+                <div id="tab-man-absen" class="hidden flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50 custom-scrollbar">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="font-black text-slate-800 text-lg">E-Absensi & Konsumsi</h3>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">Catat kehadiran dan status makan peserta pada hari-H keberangkatan.</p>
+                        </div>
+                        <button class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-2">
+                            <i class="fa-solid fa-print"></i> Unduh PDF
+                        </button>
+                    </div>
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 text-center">
+                        <p class="text-slate-500 font-bold text-sm">Data peserta akan muncul di sini setelah armada di-plot.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Import CSV -->
     <div id="import-csv-modal" class="hidden fixed inset-0 z-[999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col relative overflow-hidden border border-slate-100 p-6">
@@ -1667,19 +1745,22 @@
                     if(plan.extendedProps.catPax > 0) tags += `<span class="bg-orange-50 text-orange-600 px-2 py-1 rounded text-[10px] font-bold border border-orange-100"><i class="fa-solid fa-utensils"></i> ${plan.extendedProps.catPax} Pax</span>`;
 
                     planHtml += `
-                        <div class="glass-card p-5 border-t-4 border-t-aw-yellow hover:-translate-y-1 transition-all cursor-pointer group" onclick="openEditBooking(${plan.id})">
-                            <div class="flex justify-between items-start mb-3">
+                        <div class="glass-card p-5 border-t-4 border-t-aw-yellow hover:-translate-y-1 transition-all group flex flex-col h-full relative">
+                            <button onclick="openEditBooking(${plan.id})" class="absolute top-4 right-4 w-8 h-8 bg-slate-100 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 rounded-full flex items-center justify-center transition-colors shadow-sm" title="Edit Jadwal & Kontak"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                            
+                            <div class="flex justify-between items-start mb-3 pr-10">
                                 <span class="text-[9px] font-black uppercase tracking-widest text-aw-yellow bg-yellow-50 px-2 py-1 rounded border border-yellow-100">${plan.type}</span>
-                                <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded"><i class="fa-regular fa-calendar text-aw-blue"></i> ${plan.start}</span>
                             </div>
                             <h4 class="font-black text-slate-800 text-lg mb-1 leading-tight group-hover:text-aw-blue transition-colors line-clamp-1">${plan.title}</h4>
-                            <p class="text-xs font-medium text-slate-500 mb-4 flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-slate-400"></i> ${plan.extendedProps.loc}</p>
+                            <p class="text-xs font-medium text-slate-500 mb-2 flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-slate-400"></i> ${plan.extendedProps.loc}</p>
+                            <p class="text-xs font-bold text-slate-500 mb-4 flex items-center gap-1.5"><i class="fa-regular fa-calendar-check text-slate-400"></i> ${plan.start} • ${plan.extendedProps.timeStart} - ${plan.extendedProps.timeEnd}</p>
                             
-                            <div class="flex flex-wrap gap-2 mb-4">${tags}</div>
+                            <div class="flex flex-wrap gap-2 mb-5">${tags}</div>
                             
-                            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                                <span class="text-xs font-bold text-slate-500"><i class="fa-regular fa-clock"></i> ${plan.extendedProps.timeStart} - ${plan.extendedProps.timeEnd}</span>
-                                <button class="text-xs font-black text-indigo-500 hover:text-indigo-700 transition flex items-center gap-1"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                            <div class="mt-auto pt-4 border-t border-slate-100">
+                                <button onclick="openManifestModal(${plan.id})" class="w-full py-3 bg-aw-navy hover:bg-blue-800 text-white font-bold rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 text-xs uppercase tracking-wider">
+                                    <i class="fa-solid fa-clipboard-user text-base"></i> Kelola Manifest & Absen
+                                </button>
                             </div>
                         </div>`;
                 });
@@ -2788,6 +2869,52 @@
             } finally {
                 btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Perubahan`; 
                 btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // MANIFEST & ABSENSI LOGIC (STAGE 8 & 9)
+        // ==========================================
+        let activeEventManifest = null;
+
+        function openManifestModal(eventId) {
+            const ev = MY_PLANNING.find(p => p.id === eventId);
+            if(!ev) return;
+            activeEventManifest = ev;
+
+            // Set Header Text
+            document.getElementById('man-ev-title').innerText = ev.title;
+            document.getElementById('man-ev-info').innerHTML = `<i class="fa-solid fa-location-dot mr-1"></i> ${ev.extendedProps.loc} • ${ev.start}`;
+            document.getElementById('man-ev-pax').innerText = ev.extendedProps.pax + " Orang";
+
+            // Default ke tab bus
+            switchManifestTab('bus');
+            
+            // Open Modal
+            openModal('manifest-modal');
+        }
+
+        function closeManifestModal() {
+            closeModal('manifest-modal');
+            activeEventManifest = null;
+        }
+
+        function switchManifestTab(tab) {
+            const tabBus = document.getElementById('tab-man-bus');
+            const tabAbsen = document.getElementById('tab-man-absen');
+            const btnBus = document.getElementById('btn-tab-man-bus');
+            const btnAbsen = document.getElementById('btn-tab-man-absen');
+
+            if (tab === 'bus') {
+                tabBus.classList.remove('hidden');
+                tabAbsen.classList.add('hidden');
+                btnBus.className = "flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-xl bg-aw-navy text-white font-bold text-sm shadow-md transition-all whitespace-nowrap";
+                btnAbsen.className = "flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-sm transition-all border border-slate-200 whitespace-nowrap";
+            } else {
+                tabBus.classList.add('hidden');
+                tabAbsen.classList.remove('hidden');
+                btnAbsen.className = "flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-xl bg-aw-navy text-white font-bold text-sm shadow-md transition-all whitespace-nowrap";
+                btnBus.className = "flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-sm transition-all border border-slate-200 whitespace-nowrap";
             }
         }
 
