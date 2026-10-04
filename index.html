@@ -2972,11 +2972,12 @@
             if(!ev) return;
             activeEventManifest = ev;
 
+            // Set Header Text
             document.getElementById('man-ev-title').innerText = ev.title;
             document.getElementById('man-ev-info').innerHTML = `<i class="fa-solid fa-location-dot mr-1"></i> ${ev.extendedProps.loc} • ${ev.start}`;
             document.getElementById('man-ev-pax').innerText = ev.extendedProps.pax + " Orang";
 
-            // Ambil data konfigurasi_bus dari Supabase (jika sudah ada sebelumnya)
+            // Ambil data konfigurasi_bus dari Supabase
             try {
                 const { data } = await supabaseApp.from('events').select('konfigurasi_bus').eq('id', eventId).single();
                 if(data && data.konfigurasi_bus && data.konfigurasi_bus.length > 0) {
