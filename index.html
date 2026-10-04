@@ -771,24 +771,30 @@
                     </button>
                 </div>
 
-                <!-- Tab: Konfigurasi & Plotting Bus (STAGE 9) -->
-                <div id="tab-man-bus" class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50 custom-scrollbar">
+               <!-- Tab: Konfigurasi & Plotting Bus (STAGE 9) -->
+                <div id="tab-man-bus" class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50 custom-scrollbar relative">
                     <div class="flex justify-between items-center mb-6">
                         <div>
                             <h3 class="font-black text-slate-800 text-lg">Konfigurasi Armada Bus</h3>
                             <p class="text-xs text-slate-500 font-medium mt-0.5">Atur layout tempat duduk dan plot siswa secara otomatis atau manual.</p>
                         </div>
-                        <button class="bg-aw-green hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-2">
+                        <button onclick="openModal('add-bus-modal')" class="bg-aw-green hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-2">
                             <i class="fa-solid fa-plus"></i> Tambah Bus
                         </button>
                     </div>
-                    <div class="border-2 border-dashed border-slate-300 rounded-2xl p-10 flex flex-col items-center justify-center text-center">
-                        <div class="w-20 h-20 bg-blue-50 text-aw-blue rounded-full flex items-center justify-center text-3xl mb-4 shadow-sm">
-                            <i class="fa-solid fa-bus"></i>
+                    
+                    <!-- Tempat render kartu bus -->
+                    <div id="manifest-bus-list" class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                        <div class="col-span-full border-2 border-dashed border-slate-300 rounded-2xl p-10 flex flex-col items-center justify-center text-center">
+                            <div class="w-20 h-20 bg-blue-50 text-aw-blue rounded-full flex items-center justify-center text-3xl mb-4 shadow-sm">
+                                <i class="fa-solid fa-bus"></i>
+                            </div>
+                            <h4 class="font-black text-slate-700 text-lg mb-1">Belum Ada Armada</h4>
+                            <p class="text-sm text-slate-500 max-w-md">Silakan klik "Tambah Bus" untuk membuat skema tempat duduk (2-2 atau 2-3).</p>
                         </div>
-                        <h4 class="font-black text-slate-700 text-lg mb-1">Belum Ada Armada</h4>
-                        <p class="text-sm text-slate-500 max-w-md">Silakan klik "Tambah Bus" untuk membuat skema tempat duduk (2-2 atau 2-3).</p>
                     </div>
+                    
+                    <button id="btn-simpan-konfig-bus" onclick="saveKonfigurasiBusToDB()" class="hidden w-full mt-6 py-3.5 bg-aw-navy hover:bg-blue-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 uppercase tracking-wider"><i class="fa-solid fa-save"></i> Simpan Konfigurasi & Lanjut Denah</button>
                 </div>
 
                 <!-- Tab: E-Absensi & Konsumsi (STAGE 8) -->
@@ -807,7 +813,48 @@
                     </div>
                 </div>
 
-            </div>
+           </div>
+        </div>
+    </div>
+
+    <!-- Sub-Modal: Tambah Konfigurasi Bus -->
+    <div id="add-bus-modal" class="hidden fixed inset-0 z-[1050] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col relative overflow-hidden border border-slate-100 p-6">
+            <button onclick="closeModal('add-bus-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 transition-colors"><i class="fa-solid fa-times"></i></button>
+            <div class="w-12 h-12 bg-emerald-50 text-aw-green rounded-full flex items-center justify-center text-xl mb-4 shadow-inner border border-emerald-100"><i class="fa-solid fa-bus"></i></div>
+            <h3 class="font-black text-slate-800 text-xl mb-1">Pengaturan Armada</h3>
+            <p class="text-xs text-slate-500 mb-5 font-medium">Buat struktur tempat duduk di dalam bus ini.</p>
+
+            <form onsubmit="submitNewBusConfig(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Nama / Nomor Bus</label>
+                    <input type="text" id="inp-konfig-bus-name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-aw-blue outline-none transition text-sm font-bold text-slate-700 uppercase" placeholder="Cth: BUS 1 IKHWAN" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Kapasitas Kursi</label>
+                        <input type="number" id="inp-konfig-bus-cap" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-aw-blue outline-none transition text-sm font-bold text-slate-700" placeholder="Cth: 50" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Layout Kursi</label>
+                        <select id="inp-konfig-bus-layout" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-aw-blue outline-none transition text-sm font-bold text-slate-700 cursor-pointer">
+                            <option value="2-2">Format 2 - 2</option>
+                            <option value="2-3">Format 2 - 3</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Gender / Peruntukan</label>
+                    <select id="inp-konfig-bus-gender" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-aw-blue outline-none transition text-sm font-bold text-slate-700 cursor-pointer">
+                        <option value="Ikhwan">Ikhwan (Laki-laki)</option>
+                        <option value="Akhwat">Akhwat (Perempuan)</option>
+                        <option value="Campur">Campuran / Khusus Guru</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full py-3.5 mt-2 bg-aw-green hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg transition-all flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Tambahkan ke Daftar
+                </button>
+            </form>
         </div>
     </div>
 
@@ -2872,10 +2919,151 @@
             }
         }
 
-        // ==========================================
+       // ==========================================
         // MANIFEST & ABSENSI LOGIC (STAGE 8 & 9)
         // ==========================================
         let activeEventManifest = null;
+        let currentBusConfigs = []; // Array untuk menampung data rancangan bus sementara
+
+        async function openManifestModal(eventId) {
+            const ev = MY_PLANNING.find(p => p.id === eventId);
+            if(!ev) return;
+            activeEventManifest = ev;
+
+            document.getElementById('man-ev-title').innerText = ev.title;
+            document.getElementById('man-ev-info').innerHTML = `<i class="fa-solid fa-location-dot mr-1"></i> ${ev.extendedProps.loc} • ${ev.start}`;
+            document.getElementById('man-ev-pax').innerText = ev.extendedProps.pax + " Orang";
+
+            // Ambil data konfigurasi_bus dari Supabase (jika sudah ada sebelumnya)
+            try {
+                const { data } = await supabaseApp.from('events').select('konfigurasi_bus').eq('id', eventId).single();
+                if(data && data.konfigurasi_bus) {
+                    currentBusConfigs = typeof data.konfigurasi_bus === 'string' ? JSON.parse(data.konfigurasi_bus) : data.konfigurasi_bus;
+                } else {
+                    currentBusConfigs = [];
+                }
+            } catch(e) { console.error(e); currentBusConfigs = []; }
+
+            renderManifestBusList();
+            switchManifestTab('bus');
+            openModal('manifest-modal');
+        }
+
+        function closeManifestModal() {
+            closeModal('manifest-modal');
+            activeEventManifest = null;
+            currentBusConfigs = [];
+        }
+
+        function submitNewBusConfig(e) {
+            e.preventDefault();
+            const name = document.getElementById('inp-konfig-bus-name').value;
+            const cap = parseInt(document.getElementById('inp-konfig-bus-cap').value);
+            const layout = document.getElementById('inp-konfig-bus-layout').value;
+            const gender = document.getElementById('inp-konfig-bus-gender').value;
+
+            // Generate ID unik lokal
+            const tempId = 'bus_' + Date.now();
+            currentBusConfigs.push({ id: tempId, nama: name, kapasitas: cap, layout: layout, gender: gender });
+            
+            showToast(`Bus ${name} berhasil ditambahkan!`, 'success');
+            closeModal('add-bus-modal');
+            e.target.reset();
+            
+            renderManifestBusList();
+        }
+
+        function hapusBusConfig(busId) {
+            currentBusConfigs = currentBusConfigs.filter(b => b.id !== busId);
+            renderManifestBusList();
+        }
+
+        function renderManifestBusList() {
+            const container = document.getElementById('manifest-bus-list');
+            const btnSimpan = document.getElementById('btn-simpan-konfig-bus');
+
+            if(currentBusConfigs.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full border-2 border-dashed border-slate-300 rounded-2xl p-10 flex flex-col items-center justify-center text-center">
+                        <div class="w-20 h-20 bg-blue-50 text-aw-blue rounded-full flex items-center justify-center text-3xl mb-4 shadow-sm"><i class="fa-solid fa-bus"></i></div>
+                        <h4 class="font-black text-slate-700 text-lg mb-1">Belum Ada Armada</h4>
+                        <p class="text-sm text-slate-500 max-w-md">Silakan klik "Tambah Bus" untuk membuat skema tempat duduk (2-2 atau 2-3).</p>
+                    </div>`;
+                btnSimpan.classList.add('hidden');
+                return;
+            }
+
+            let html = '';
+            let totalTersedia = 0;
+
+            currentBusConfigs.forEach(b => {
+                totalTersedia += b.kapasitas;
+                let colorTheme = b.gender === 'Ikhwan' ? 'text-aw-blue bg-blue-50 border-blue-200' : (b.gender === 'Akhwat' ? 'text-rose-500 bg-rose-50 border-rose-200' : 'text-slate-600 bg-slate-100 border-slate-300');
+                let iconGen = b.gender === 'Ikhwan' ? 'fa-mars' : (b.gender === 'Akhwat' ? 'fa-venus' : 'fa-users');
+
+                html += `
+                <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex gap-4 relative animate-in fade-in">
+                    <button onclick="hapusBusConfig('${b.id}')" class="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
+                    <div class="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-black shrink-0 ${colorTheme} shadow-inner border">
+                        <i class="fa-solid fa-bus-simple"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h4 class="font-black text-slate-800 text-base truncate">${b.nama}</h4>
+                            <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border ${colorTheme}"><i class="fa-solid ${iconGen} mr-1"></i>${b.gender}</span>
+                        </div>
+                        <p class="text-xs font-bold text-slate-500 mb-2">Formasi: <span class="text-slate-700">${b.layout}</span></p>
+                        
+                        <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                            <span class="text-[10px] font-bold uppercase text-slate-400">Total Kursi</span>
+                            <span class="text-sm font-black text-aw-navy">${b.kapasitas} <i class="fa-solid fa-chair text-slate-300 ml-1"></i></span>
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            // Status kecukupan kursi
+            const totalPax = activeEventManifest.extendedProps.pax;
+            const sisaKursi = totalTersedia - totalPax;
+            const statusColor = sisaKursi >= 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-600';
+            const statusIcon = sisaKursi >= 0 ? '<i class="fa-solid fa-check-circle"></i> Kursi Mencukupi' : '<i class="fa-solid fa-triangle-exclamation"></i> Kurang ' + Math.abs(sisaKursi) + ' Kursi';
+
+            container.innerHTML = html + `
+                <div class="col-span-full mt-2 p-3 rounded-xl border flex justify-between items-center ${statusColor}">
+                    <span class="text-xs font-bold">${statusIcon}</span>
+                    <span class="text-xs font-black">Tersedia: ${totalTersedia} / Butuh: ${totalPax}</span>
+                </div>
+            `;
+            
+            // Tombol simpan muncul jika minimal ada 1 bus
+            btnSimpan.classList.remove('hidden');
+        }
+
+        async function saveKonfigurasiBusToDB() {
+            const btn = document.getElementById('btn-simpan-konfig-bus');
+            btn.innerHTML = `<div class="loader-spin mx-auto"></div>`; btn.disabled = true;
+
+            try {
+                // Simpan format JSON ke kolom konfigurasi_bus di tabel events
+                const { error } = await supabaseApp.from('events')
+                    .update({ konfigurasi_bus: currentBusConfigs })
+                    .eq('id', activeEventManifest.id);
+                
+                if (error) throw error;
+                
+                showToast("Konfigurasi armada berhasil disimpan ke Database!", "success");
+                // TBD: Lanjut buka fitur menggambar denah bus (Stage 9 - Phase 3)
+                setTimeout(() => {
+                    alert("Akan segera membuka Visual Denah Bus..."); 
+                }, 800);
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan konfigurasi bus.", "error");
+            } finally {
+                btn.innerHTML = `<i class="fa-solid fa-save"></i> Simpan Konfigurasi & Lanjut Denah`; 
+                btn.disabled = false;
+            }
+        }
 
         function openManifestModal(eventId) {
             const ev = MY_PLANNING.find(p => p.id === eventId);
