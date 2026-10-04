@@ -18,6 +18,8 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
     <!-- Supabase JS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- HTML2PDF CDN (Sihir Cetak PDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -798,12 +800,15 @@
                         <!-- Toolbar Denah -->
                         <div class="bg-white p-3 border-b border-slate-200 flex justify-between items-center shadow-sm shrink-0">
                             <button onclick="backToKonfigBus()" class="text-xs font-bold text-slate-500 hover:text-aw-blue px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i> Kembali ke Konfigurasi</button>
-                            <div class="flex items-center gap-2">
+                            <<div class="flex items-center gap-2">
                                 <button onclick="autoPlotBus()" class="bg-aw-yellow hover:bg-amber-400 text-aw-navy px-4 py-1.5 rounded-lg text-xs font-black shadow-sm transition flex items-center gap-2">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Plot
                                 </button>
                                 <button id="btn-save-plot" onclick="savePlottingToDB()" class="bg-aw-green hover:bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-xs font-black shadow-sm transition flex items-center gap-2">
-                                    <i class="fa-solid fa-save"></i> Simpan Plotting
+                                    <i class="fa-solid fa-save"></i> Simpan
+                                </button>
+                                <button onclick="downloadPDFManifest()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-xs font-black shadow-sm transition flex items-center gap-2">
+                                    <i class="fa-solid fa-file-pdf"></i> Unduh PDF
                                 </button>
                             </div>
                         </div>
@@ -2974,18 +2979,32 @@
             // Ambil data konfigurasi_bus dari Supabase (jika sudah ada sebelumnya)
             try {
                 const { data } = await supabaseApp.from('events').select('konfigurasi_bus').eq('id', eventId).single();
-                if(data && data.konfigurasi_bus) {
+                if(data && data.konfigurasi_bus && data.konfigurasi_bus.length > 0) {
                     currentBusConfigs = typeof data.konfigurasi_bus === 'string' ? JSON.parse(data.konfigurasi_bus) : data.konfigurasi_bus;
+                    
+                    // Bypass langsung ke Fase 2 (Visual Denah) karena sudah ada konfigurasi/plotting
+                    switchManifestTab('bus');
+                    document.getElementById('man-fase-1').classList.add('hidden');
+                    document.getElementById('man-fase-2').classList.remove('hidden');
+                    document.getElementById('man-fase-2').classList.add('flex');
+                    openModal('manifest-modal');
+                    
+                    setTimeout(() => { initVisualDenahBus(); }, 300); // Render visualnya
+                    return; // Hentikan eksekusi ke bawah
                 } else {
                     currentBusConfigs = [];
                 }
             } catch(e) { console.error(e); currentBusConfigs = []; }
 
+            // Jika belum ada konfigurasi, munculkan Fase 1
+            document.getElementById('man-fase-1').classList.remove('hidden');
+            document.getElementById('man-fase-2').classList.add('hidden');
+            document.getElementById('man-fase-2').classList.remove('flex');
+            
             renderManifestBusList();
             switchManifestTab('bus');
             openModal('manifest-modal');
         }
-
         function closeManifestModal() {
             closeModal('manifest-modal');
             activeEventManifest = null;
@@ -3152,6 +3171,31 @@
                 btn.innerHTML = originalText; 
                 btn.disabled = false;
             }
+        }
+
+        async function downloadPDFManifest() {
+            const element = document.getElementById('canvas-bus-area');
+            
+            // Trik khusus: kita manipulasi class CSS sementara agar waktu difoto PDF nggak ada yang terpotong scroll
+            const originalClasses = element.className;
+            element.className = "flex flex-wrap justify-center gap-6 bg-white p-8 w-max min-w-[1100px]"; 
+            
+            const opt = {
+                margin:       0.3,
+                filename:     `Manifest_Bus_${activeEventManifest.title}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+            
+            showToast("Memotret denah jadi PDF, mohon tunggu...", "info");
+            
+            // Proses generate
+            await html2pdf().set(opt).from(element).save();
+            
+            // Kembalikan ke tampilan scroll asli di web
+            element.className = originalClasses;
+            showToast("PDF Manifest berhasil diunduh!", "success");
         }
 
         function initVisualDenahBus() {
