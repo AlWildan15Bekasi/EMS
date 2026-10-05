@@ -838,21 +838,25 @@
                 </div>
 
                 <!-- Tab: E-Absensi & Konsumsi (STAGE 8) -->
-                <div id="tab-man-absen" class="hidden flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50 custom-scrollbar">
-                    <div class="flex justify-between items-center mb-6">
+                <div id="tab-man-absen" class="hidden flex-1 overflow-hidden bg-slate-50 flex-col">
+                    <div class="p-4 sm:p-6 border-b border-slate-200 shrink-0 bg-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
-                            <h3 class="font-black text-slate-800 text-lg">E-Absensi & Konsumsi</h3>
-                            <p class="text-xs text-slate-500 font-medium mt-0.5">Catat kehadiran dan status makan peserta pada hari-H keberangkatan.</p>
+                            <h3 class="font-black text-slate-800 text-lg">E-Absensi & Distribusi Konsumsi</h3>
+                            <p class="text-xs text-slate-500 font-medium mt-0.5">Catat kehadiran dan serah-terima makanan per armada bus di hari-H.</p>
                         </div>
-                        <button class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-2">
-                            <i class="fa-solid fa-print"></i> Unduh PDF
-                        </button>
+                        <div class="flex gap-2">
+                            <button id="btn-save-absen" onclick="saveAbsensiToDB()" class="bg-aw-green hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md transition flex items-center gap-2">
+                                <i class="fa-solid fa-save"></i> Simpan Data
+                            </button>
+                            <button onclick="downloadPDFAbsensi()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-md transition flex items-center gap-2">
+                                <i class="fa-solid fa-file-pdf"></i> Unduh PDF Rekap
+                            </button>
+                        </div>
                     </div>
-                    <div class="bg-white rounded-xl border border-slate-200 p-6 text-center">
-                        <p class="text-slate-500 font-bold text-sm">Data peserta akan muncul di sini setelah armada di-plot.</p>
+                    <div id="absen-list-container" class="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar space-y-6">
+                        <!-- Tabel Absensi per Bus akan diinjeksi JS di sini -->
                     </div>
                 </div>
-
            </div>
         </div>
     </div>
@@ -3460,7 +3464,7 @@
         }, 600);
     }
 
-    function switchManifestTab(tab) {
+   function switchManifestTab(tab) {
             const tabBus = document.getElementById('tab-man-bus');
             const tabAbsen = document.getElementById('tab-man-absen');
             const btnBus = document.getElementById('btn-tab-man-bus');
@@ -3469,16 +3473,170 @@
             if (tab === 'bus') {
                 tabBus.classList.remove('hidden');
                 tabAbsen.classList.add('hidden');
+                tabAbsen.classList.remove('flex');
                 btnBus.className = "flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-xl bg-aw-navy text-white font-bold text-sm shadow-md transition-all whitespace-nowrap";
                 btnAbsen.className = "flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-sm transition-all border border-slate-200 whitespace-nowrap";
             } else {
                 tabBus.classList.add('hidden');
                 tabAbsen.classList.remove('hidden');
+                tabAbsen.classList.add('flex'); 
                 btnAbsen.className = "flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-xl bg-aw-navy text-white font-bold text-sm shadow-md transition-all whitespace-nowrap";
                 btnBus.className = "flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-sm transition-all border border-slate-200 whitespace-nowrap";
+                
+                // Memicu gambar tabel absensi otomatis
+                renderAbsensiList();
+            }
+        }
+function renderAbsensiList() {
+            const container = document.getElementById('absen-list-container');
+            if (!currentBusConfigs || currentBusConfigs.length === 0) {
+                container.innerHTML = `<div class="text-center p-10 text-slate-500 font-bold italic border-2 border-dashed border-slate-300 rounded-2xl bg-white">Belum ada data. Lakukan Plotting Armada Bus terlebih dahulu.</div>`;
+                return;
+            }
+
+            let html = '';
+            currentBusConfigs.forEach((bus, bIdx) => {
+                let tbody = '';
+                let index = 1;
+                let totalPenumpang = 0;
+                let hadirCount = 0;
+                let makanCount = 0;
+
+                // Cek array kursi bus satu persatu
+                if (bus.passengers) {
+                    bus.passengers.forEach((p, pIdx) => {
+                        if (p) {
+                            totalPenumpang++;
+                            // Nilai default untuk data awal: Semua Hadir dan Semua Makan
+                            if (p.hadir !== false) { p.hadir = true; hadirCount++; } 
+                            if (p.makan !== false) { p.makan = true; makanCount++; } 
+
+                            const btnHadirClass = p.hadir ? 'bg-aw-green text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300';
+                            const btnAlphaClass = !p.hadir ? 'bg-red-500 text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300';
+                            
+                            const btnMakanClass = p.makan ? 'bg-aw-yellow text-aw-navy' : 'bg-slate-200 text-slate-500 hover:bg-slate-300';
+                            const btnBelumClass = !p.makan ? 'bg-slate-500 text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300';
+
+                            let roleBadge = p.type === 'Guru' ? `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[9px] font-black uppercase">Guru</span>` : `<span class="bg-blue-50 text-aw-blue px-2 py-0.5 rounded text-[9px] font-black uppercase">${p.class}</span>`;
+
+                            tbody += `
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td class="p-3 text-xs font-bold text-slate-700 w-12 text-center">${index++}</td>
+                                <td class="p-3">
+                                    <p class="text-sm font-bold text-slate-800 leading-tight">${p.name}</p>
+                                    ${roleBadge}
+                                </td>
+                                <td class="p-3 w-40 text-center">
+                                    <div class="flex rounded-lg overflow-hidden border border-slate-200 w-max shadow-sm mx-auto">
+                                        <button onclick="toggleAbsenStatus(${bIdx}, ${pIdx}, 'hadir', true)" class="px-3 py-1.5 text-[10px] font-black uppercase transition-colors ${btnHadirClass}">Hadir</button>
+                                        <button onclick="toggleAbsenStatus(${bIdx}, ${pIdx}, 'hadir', false)" class="px-3 py-1.5 text-[10px] font-black uppercase transition-colors ${btnAlphaClass}">Alfa</button>
+                                    </div>
+                                </td>
+                                <td class="p-3 w-40 text-center">
+                                    <div class="flex rounded-lg overflow-hidden border border-slate-200 w-max shadow-sm mx-auto">
+                                        <button onclick="toggleAbsenStatus(${bIdx}, ${pIdx}, 'makan', true)" class="px-3 py-1.5 text-[10px] font-black uppercase transition-colors ${btnMakanClass}"><i class="fa-solid fa-check"></i> Rcv</button>
+                                        <button onclick="toggleAbsenStatus(${bIdx}, ${pIdx}, 'makan', false)" class="px-3 py-1.5 text-[10px] font-black uppercase transition-colors ${btnBelumClass}"><i class="fa-solid fa-times"></i> X</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            `;
+                        }
+                    });
+                }
+
+                if(totalPenumpang === 0) {
+                    tbody = `<tr><td colspan="4" class="p-6 text-center text-xs font-bold text-slate-400 italic">Armada kosong. Silakan plot penumpang di tab sebelah terlebih dahulu.</td></tr>`;
+                }
+
+                html += `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6 animate-in fade-in">
+                    <div class="bg-slate-800 p-4 flex justify-between items-center print-header">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-white/20 text-white rounded-lg flex items-center justify-center text-lg"><i class="fa-solid fa-bus"></i></div>
+                            <div>
+                                <h4 class="font-black text-white text-base leading-tight">${bus.nama}</h4>
+                                <p class="text-[10px] text-slate-300 font-medium">Kapasitas: ${totalPenumpang} Penumpang</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 text-center">
+                            <div><p class="text-[9px] text-slate-400 font-bold uppercase">Hadir</p><p class="text-sm font-black text-emerald-400">${hadirCount}/${totalPenumpang}</p></div>
+                            <div><p class="text-[9px] text-slate-400 font-bold uppercase">Makan</p><p class="text-sm font-black text-aw-yellow">${makanCount}/${totalPenumpang}</p></div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3 text-center">No</th>
+                                    <th class="p-3">Nama Penumpang</th>
+                                    <th class="p-3 text-center">Kehadiran</th>
+                                    <th class="p-3 text-center">Distribusi Makanan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tbody}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Fungsi mengubah status saat tombol dipencet
+        function toggleAbsenStatus(busIdx, passIdx, type, value) {
+            if(type === 'hadir') currentBusConfigs[busIdx].passengers[passIdx].hadir = value;
+            if(type === 'makan') currentBusConfigs[busIdx].passengers[passIdx].makan = value;
+            renderAbsensiList(); // Gambar ulang seketika biar warnanya berubah
+        }
+
+        async function saveAbsensiToDB() {
+            const btn = document.getElementById('btn-save-absen');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Load...`; 
+            btn.disabled = true;
+
+            try {
+                // Konfigurasi_bus sudah menyimpan status hadir dan makan dari toggle, kita hajar tembak lagi ke Supabase
+                const { error } = await supabaseApp.from('events')
+                    .update({ konfigurasi_bus: currentBusConfigs })
+                    .eq('id', activeEventManifest.id);
+                
+                if (error) throw error;
+                showToast("Rekap E-Absensi & Konsumsi berhasil dikunci ke database!", "success");
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal menyimpan rekap absensi.", "error");
+            } finally {
+                btn.innerHTML = originalText; 
+                btn.disabled = false;
             }
         }
 
+        async function downloadPDFAbsensi() {
+            const element = document.getElementById('absen-list-container');
+            const originalClasses = element.className;
+            
+            // Format layout buat PDF
+            element.className = "p-8 bg-white w-max min-w-[900px]"; 
+            
+            const opt = {
+                margin:       0.4,
+                filename:     `Cetak_Absensi_${activeEventManifest.title}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+            
+            showToast("Mempersiapkan dokumen absensi PDF...", "info");
+            await html2pdf().set(opt).from(element).save();
+            
+            element.className = originalClasses;
+            showToast("PDF Rekap Absensi berhasil diunduh!", "success");
+        }
+        
         // ==========================================
         // GLOBAL CALENDAR & REVIEW LOGIC
         // ==========================================
