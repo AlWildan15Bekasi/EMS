@@ -3614,13 +3614,24 @@ function renderAbsensiList() {
         }
 
         // ==========================================
-        // MESIN RAKIT PDF A4 ELEGAN (BARU)
+        // MESIN RAKIT PDF A4 ELEGAN (REVISI FIX BLANK PUTIH)
         // ==========================================
         async function printA4PDF(title, htmlContent, isLandscape = false) {
+            // Kita bikin elemen penampung kertas virtual
             const container = document.createElement('div');
-            container.style.position = 'absolute'; container.style.left = '-9999px'; container.style.top = '0';
-            container.style.width = isLandscape ? '1122px' : '794px'; 
-            container.style.backgroundColor = 'white'; container.style.padding = '40px'; container.style.color = '#000';
+            
+            // TRICK BARU: Letakkan di koordinat 0,0 TAPI dibelakang background web (z-index negatif)
+            // Kasih width fix supaya rasio PDF konsisten (Landscape ~1050px, Portrait ~750px)
+            container.style.position = 'absolute'; 
+            container.style.left = '0'; 
+            container.style.top = '0';
+            container.style.zIndex = '-9999'; 
+            container.style.width = isLandscape ? '1050px' : '750px'; 
+            container.style.backgroundColor = 'white'; 
+            container.style.padding = '40px'; 
+            container.style.color = '#000';
+            
+            // Isi layout kertas A4
             container.innerHTML = `
                 <div style="border-bottom: 2px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
                     <img src="https://i.ibb.co.com/jvJhWqgK/Screenshot-2026-09-28-115354.png" style="width: 50px; height: 50px; object-fit: contain;">
@@ -3633,17 +3644,26 @@ function renderAbsensiList() {
                 <div style="margin-top: 40px; border-top: 1px dashed #cbd5e1; padding-top: 10px; font-size: 10px; color: #94a3b8; font-family: sans-serif; text-align: right;">
                     Dicetak secara otomatis oleh sistem pada ${new Date().toLocaleString('id-ID')}
                 </div>`;
+            
+            // Tempel ke body agar eksis di layar untuk difoto
             document.body.appendChild(container);
 
             const opt = {
-                margin: 0.3, filename: `${title}.pdf`,
+                margin: 0.3, 
+                filename: `${title}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'in', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait' }
             };
             
             showToast("Menyiapkan dokumen PDF A4...", "info");
+            
+            // JEDA PENTING: Tunggu 0.8 detik agar logo gambar & font ter-load sebelum difoto
+            await new Promise(resolve => setTimeout(resolve, 800));
+
             await html2pdf().set(opt).from(container).save();
+            
+            // Hapus kertas virtualnya setelah selesai difoto
             document.body.removeChild(container);
             showToast("PDF berhasil diunduh!", "success");
         }
