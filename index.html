@@ -3457,31 +3457,10 @@
                 showToast("Selesai! Peserta di-plot otomatis sesuai rombel kelas.", "success");
                 
                 if(btn) { btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Plot Semua`; btn.disabled = false; }
-            }, 600);
-        }
-        function openManifestModal(eventId) {
-            const ev = MY_PLANNING.find(p => p.id === eventId);
-            if(!ev) return;
-            activeEventManifest = ev;
+        }, 600);
+    }
 
-            // Set Header Text
-            document.getElementById('man-ev-title').innerText = ev.title;
-            document.getElementById('man-ev-info').innerHTML = `<i class="fa-solid fa-location-dot mr-1"></i> ${ev.extendedProps.loc} • ${ev.start}`;
-            document.getElementById('man-ev-pax').innerText = ev.extendedProps.pax + " Orang";
-
-            // Default ke tab bus
-            switchManifestTab('bus');
-            
-            // Open Modal
-            openModal('manifest-modal');
-        }
-
-        function closeManifestModal() {
-            closeModal('manifest-modal');
-            activeEventManifest = null;
-        }
-
-        function switchManifestTab(tab) {
+    function switchManifestTab(tab) {
             const tabBus = document.getElementById('tab-man-bus');
             const tabAbsen = document.getElementById('tab-man-absen');
             const btnBus = document.getElementById('btn-tab-man-bus');
