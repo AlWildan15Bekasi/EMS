@@ -1595,11 +1595,6 @@
         let GLOBAL_EVENTS = [];
         let MY_PLANNING = [];
 
-        const MOCK_REPORTS = [
-            { id: 'rep-1', type: 'Fieldtrip', name: 'Sains SD (Selesai)', loc: 'Taman Bunga Nusantara', date: '2026-08-15', attPct: 95, absentList: '1. Ahmad (Sakit)\n2. Budi (Izin)', busCount: 4, costTicket: 65000, costFood: 35000, costTrans: 2500000, totalPax: 120, ratingBus: 4, ratingFood: 5, ratingTrans: 4 },
-            { id: 'rep-2', type: 'Outing Class', name: 'Observasi Museum', loc: 'Museum Geologi', date: '2026-03-02', attPct: 98, absentList: '1. Rina (Sakit)', busCount: 2, costTicket: 10000, costFood: 30000, costTrans: 2800000, totalPax: 80, ratingBus: 5, ratingFood: 4, ratingTrans: 3 }
-        ];
-
         let MY_HISTORY = [
             { id: 101, locId: 2, date: '2026-03-02', event: 'Outing Sejarah Kelas 8', isReviewed: true },
             { id: 102, locId: 1, date: '2026-08-15', event: 'Sains SD (Selesai)', isReviewed: true },
@@ -1797,6 +1792,7 @@
                                 daftar_siswa: ev.daftar_siswa,
                                 daftar_guru: ev.daftar_guru,
                                 isReviewed: ev.is_reviewed || false,
+                                laporan_evaluasi: ev.laporan_evaluasi || null, // <--- TAMBAHKAN BARIS INI
                                 konfigurasi_bus: ev.konfigurasi_bus
                             }
                         };
@@ -1847,10 +1843,10 @@
             document.getElementById('stat-bus').innerText = MOCK_BUS.length;
             document.getElementById('stat-planning').innerText = MY_PLANNING.length;
 
+            // Render Global Agenda & Planning (KODE SAMA SEPERTI SEBELUMNYA)
             const globalContainer = document.getElementById('dashboard-global-agenda');
             let globalHtml = '';
             const upcoming = GLOBAL_EVENTS.sort((a,b) => new Date(a.start) - new Date(b.start)).slice(0, 5);
-            
             if(upcoming.length === 0) {
                 globalContainer.innerHTML = `<div class="bg-slate-50 border border-dashed border-slate-200 p-4 rounded-xl text-center"><p class="text-xs font-medium text-slate-500">Tidak ada agenda terdekat.</p></div>`;
             } else {
@@ -1887,19 +1883,16 @@
                     planHtml += `
                         <div class="glass-card p-5 border-t-4 border-t-aw-yellow hover:-translate-y-1 transition-all group flex flex-col h-full relative">
                             <button onclick="openEditBooking(${plan.id})" class="absolute top-4 right-4 w-8 h-8 bg-slate-100 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 rounded-full flex items-center justify-center transition-colors shadow-sm" title="Edit Jadwal & Kontak"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
-                            
                             <div class="flex justify-between items-start mb-3 pr-10">
                                 <span class="text-[9px] font-black uppercase tracking-widest text-aw-yellow bg-yellow-50 px-2 py-1 rounded border border-yellow-100">${plan.type}</span>
                             </div>
                             <h4 class="font-black text-slate-800 text-lg mb-1 leading-tight group-hover:text-aw-blue transition-colors line-clamp-1">${plan.title}</h4>
                             <p class="text-xs font-medium text-slate-500 mb-2 flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-slate-400"></i> ${plan.extendedProps.loc}</p>
                             <p class="text-xs font-bold text-slate-500 mb-4 flex items-center gap-1.5"><i class="fa-regular fa-calendar-check text-slate-400"></i> ${plan.start} • ${plan.extendedProps.timeStart} - ${plan.extendedProps.timeEnd}</p>
-                            
                             <div class="flex flex-wrap gap-2 mb-5">${tags}</div>
-                            
                             <div class="mt-auto pt-4 border-t border-slate-100 flex gap-2">
                                 <button onclick="openManifestModal(${plan.id})" class="flex-1 py-3 bg-aw-navy hover:bg-blue-800 text-white font-bold rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 text-[10.5px] sm:text-xs uppercase tracking-wider">
-                                    <i class="fa-solid fa-clipboard-user text-base"></i> Plotting & Absen
+                                    <i class="fa-solid fa-clipboard-user text-base"></i> Atur Kursi & Absen
                                 </button>
                                 <button onclick="markEventSelesai(${plan.id})" class="w-12 sm:w-14 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 hover:border-emerald-500 rounded-xl shadow-sm transition-colors flex justify-center items-center group" title="Tandai Acara Selesai">
                                     <i class="fa-solid fa-check text-xl group-hover:scale-110 transition-transform"></i>
@@ -1910,28 +1903,37 @@
                 planContainer.innerHTML = planHtml;
             }
 
+            // --- FASE 3: LOAD LAPORAN REAL DARI DB ---
             const overviewContainer = document.getElementById('overview-report-cards');
             let ovHtml = '';
-            MOCK_REPORTS.forEach(rep => {
-                let colorTheme = rep.type === 'Fieldtrip' ? 'aw-blue' : (rep.type === 'Outing Class' ? 'aw-green' : 'aw-yellow');
-                ovHtml += `
-                    <div class="glass-card p-5 border-t-4 border-t-${colorTheme} hover:-translate-y-1 transition-transform flex flex-col h-full cursor-pointer" onclick="openReportModal('${rep.id}')">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-[9px] font-black uppercase tracking-widest text-${colorTheme} bg-${colorTheme.replace('aw-', '')}-50 px-2 py-1 rounded border border-${colorTheme.replace('aw-', '')}-100">${rep.type}</span>
-                            <span class="text-[10px] font-bold text-slate-400"><i class="fa-regular fa-calendar"></i> ${rep.date}</span>
-                        </div>
-                        <h4 class="font-black text-slate-800 text-lg mb-1 leading-tight line-clamp-2">${rep.name}</h4>
-                        <p class="text-xs font-medium text-slate-500 mb-5 flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-slate-400"></i> ${rep.loc}</p>
-                        
-                        <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                            <div class="flex items-center gap-2 text-xs font-bold text-slate-600">
-                                <div class="w-6 h-6 rounded bg-emerald-50 text-emerald-500 flex items-center justify-center"><i class="fa-solid fa-check"></i></div> Selesai
+            
+            // Filter hanya histori yang sudah di-review dan punya JSON laporan_evaluasi
+            const reviewedEvents = MY_HISTORY.filter(h => h.extendedProps.isReviewed && h.extendedProps.laporan_evaluasi);
+            
+            if(reviewedEvents.length === 0) {
+                overviewContainer.innerHTML = `<div class="col-span-full p-8 bg-white border border-dashed border-slate-300 rounded-3xl text-center"><p class="text-sm font-bold text-slate-400">Belum ada Laporan Evaluasi yang tersimpan di Database Pusat.</p></div>`;
+            } else {
+                reviewedEvents.forEach(rep => {
+                    let colorTheme = rep.type === 'Fieldtrip' ? 'aw-blue' : (rep.type === 'Outing Class' ? 'aw-green' : 'aw-yellow');
+                    ovHtml += `
+                        <div class="glass-card p-5 border-t-4 border-t-${colorTheme} hover:-translate-y-1 transition-transform flex flex-col h-full cursor-pointer" onclick="openReportModal(${rep.id})">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-[9px] font-black uppercase tracking-widest text-${colorTheme} bg-${colorTheme.replace('aw-', '')}-50 px-2 py-1 rounded border border-${colorTheme.replace('aw-', '')}-100">${rep.type}</span>
+                                <span class="text-[10px] font-bold text-slate-400"><i class="fa-regular fa-calendar"></i> ${rep.start}</span>
                             </div>
-                            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 group-hover:text-aw-blue transition-colors">Lihat Analisis ➔</span>
-                        </div>
-                    </div>`;
-            });
-            overviewContainer.innerHTML = ovHtml;
+                            <h4 class="font-black text-slate-800 text-lg mb-1 leading-tight line-clamp-2">${rep.title}</h4>
+                            <p class="text-xs font-medium text-slate-500 mb-5 flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-slate-400"></i> ${rep.extendedProps.loc}</p>
+                            
+                            <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                                <div class="flex items-center gap-2 text-xs font-bold text-slate-600">
+                                    <div class="w-6 h-6 rounded bg-emerald-50 text-emerald-500 flex items-center justify-center"><i class="fa-solid fa-check"></i></div> Terekam Pusat
+                                </div>
+                                <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 group-hover:text-aw-blue transition-colors">Buka Analisis ➔</span>
+                            </div>
+                        </div>`;
+                });
+                overviewContainer.innerHTML = ovHtml;
+            }
         }
 
         // ==========================================
@@ -3264,10 +3266,10 @@
                 let colorTheme = bus.gender === 'Ikhwan' ? 'text-aw-blue' : (bus.gender === 'Akhwat' ? 'text-rose-500' : 'text-slate-600');
                 const is22 = bus.layout === '2-2';
                 
-                // --- LOGIKA BARU: PINTU DI KIRI BELAKANG ---
-                let L = bus.kapasitas < 50 ? 5 : 6; // Kursi paling belakang
+                // --- LOGIKA BARU: GANJIL = 5, GENAP = 6 & PINTU KIRI BELAKANG ---
+                let L = bus.kapasitas % 2 !== 0 ? 5 : 6; 
                 let R = is22 ? 4 : 5; // Standar per baris
-                let doorSeats = R - 2; // Sisa kursi di sebelah kanan pintu
+                let doorSeats = R - 2; // Pintu memakan 2 kursi di kiri
                 let normalSeatCount = bus.kapasitas - L - doorSeats;
                 
                 let seatsHtml = '<div class="flex flex-col gap-2 p-2">';
@@ -3332,7 +3334,7 @@
             
             canvas.innerHTML = busHtml;
         }
-
+        
         function generateSeatHtml(bus, seatIndex) {
             let p = bus.passengers[seatIndex];
             let boxClass = p ? (p.type === 'Guru' ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-blue-50 border-blue-200 text-aw-navy') : 'bg-white border-slate-200 text-slate-400';
@@ -3699,19 +3701,20 @@ function renderAbsensiList() {
         // MESIN RAKIT PDF A4 ELEGAN (STRATEGI MEMORI VIRTUAL)
         // ==========================================
         function printA4PDF(title, htmlContent, isLandscape = false) {
-            // KITA GABUNGKAN SEMUA JADI SATU STRING HTML MURNI
             const finalHtml = `
-                <div style="width: ${isLandscape ? '1050px' : '750px'}; padding: 30px; background-color: #ffffff; color: #000000; font-family: sans-serif;">
+                <div style="width: ${isLandscape ? '1050px' : '750px'}; padding: 40px; background-color: #ffffff; color: #000000; font-family: sans-serif; position: relative;">
+                    <!-- TANGGAL CETAK DI KANAN ATAS (Aman dari potongan) -->
+                    <div style="position: absolute; top: 40px; right: 40px; font-size: 10px; color: #94a3b8; text-align: right;">
+                        Tanggal Cetak:<br><strong style="color: #64748b;">${new Date().toLocaleString('id-ID')}</strong>
+                    </div>
+                    
                     <!-- KOP SURAT CENTERED -->
-                    <div style="border-bottom: 2px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; text-align: center;">
+                    <div style="border-bottom: 2px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 25px; text-align: center;">
                         <img src="https://i.ibb.co.com/jvJhWqgK/Screenshot-2026-09-28-115354.png" style="width: 60px; height: 60px; object-fit: contain; margin-bottom: 10px; display: inline-block;">
                         <h2 style="margin: 0; font-size: 22px; color: #1e3a8a; font-weight: 900; text-transform: uppercase;">${title.replace(/_/g, ' ')}</h2>
-                        <p style="margin: 4px 0 0 0; font-size: 11px; color: #64748b;">Al Wildan Islamic School - Dokumen Internal Sistem Event</p>
+                        <p style="margin: 4px 0 0 0; font-size: 11px; color: #64748b; font-weight: bold;">Al Wildan Islamic School - Dokumen Internal Sistem Event</p>
                     </div>
                     <div>${htmlContent}</div>
-                    <div style="margin-top: 40px; border-top: 1px dashed #cbd5e1; padding-top: 10px; font-size: 10px; color: #94a3b8; text-align: right;">
-                        Dicetak secara otomatis oleh sistem pada ${new Date().toLocaleString('id-ID')}
-                    </div>
                 </div>
             `;
 
@@ -3724,21 +3727,14 @@ function renderAbsensiList() {
             };
             
             showToast("Memproses PDF A4... Mohon tunggu sebentar", "info");
-            
-            // Suapkan string HTML langsung ke mesin pembuat PDF
-            html2pdf().set(opt).from(finalHtml).save().then(() => {
-                showToast("PDF berhasil diunduh!", "success");
-            }).catch(err => {
-                console.error("Gagal mencetak PDF:", err);
-                showToast("Terjadi kesalahan saat membuat PDF.", "error");
+            html2pdf().set(opt).from(finalHtml).save().then(() => showToast("PDF berhasil diunduh!", "success")).catch(err => {
+                console.error("Gagal mencetak PDF:", err); showToast("Terjadi kesalahan saat membuat PDF.", "error");
             });
         }
 
         function downloadPDFManifest() {
             if (!currentBusConfigs || currentBusConfigs.length === 0) return showToast("Tidak ada data armada.", "error");
             let content = `<p style="font-size: 13px; color: #334155; margin-bottom: 25px; line-height: 1.5; text-align: center;"><strong>Detail Kegiatan:</strong><br>Event: ${activeEventManifest.title}<br>Lokasi Tujuan: ${activeEventManifest.extendedProps.loc}<br>Tanggal Keberangkatan: ${activeEventManifest.start}</p>`;
-            
-            // Flex direction diubah jadi column agar turun ke bawah (cocok untuk portrait)
             let gridHtml = `<div style="display:flex; flex-direction:column; gap:20px;">`;
             
             currentBusConfigs.forEach(bus => {
@@ -3758,10 +3754,9 @@ function renderAbsensiList() {
             });
             content += gridHtml + `</div>`;
             
-            // Parameter terakhir diubah jadi false agar kertas menjadi PORTRAIT
-            printA4PDF(`Manifest_Armada_Bus_${activeEventManifest.title.replace(/\s+/g, '_')}`, content, false);
+            // Ganti Nama PDF jadi PLOTTING ARMADA BUS
+            printA4PDF(`PLOTTING_ARMADA_BUS_${activeEventManifest.title.replace(/\s+/g, '_')}`, content, false);
         }
-
         function downloadPDFAbsensi() {
             if (!currentBusConfigs || currentBusConfigs.length === 0) return showToast("Tidak ada data absensi.", "error");
             let content = `<p style="font-size: 13px; color: #334155; margin-bottom: 25px; line-height: 1.5; text-align: center;"><strong>Rekap Kehadiran Lapangan:</strong><br>Event: ${activeEventManifest.title}<br>Lokasi: ${activeEventManifest.extendedProps.loc}</p>`;
@@ -3910,7 +3905,7 @@ function renderAbsensiList() {
             openModal('review-modal');
         }
 
-        function submitReview(e) {
+        async function submitReview(e) {
             e.preventDefault();
             const histId = parseInt(document.getElementById('rev-hist-id').value);
             const rateBus = document.querySelector('input[name="rating_bus"]:checked');
@@ -3922,56 +3917,70 @@ function renderAbsensiList() {
             const btn = document.getElementById('btn-submit-review');
             btn.innerHTML = `<div class="loader-spin mx-auto"></div>`; btn.disabled = true;
 
-            setTimeout(() => {
-                const item = MY_HISTORY.find(h => h.id === histId);
-                if(item) {
-                    item.isReviewed = true;
-                    
-                    const locData = MOCK_LOCATIONS.find(l => l.id === item.locId);
-                    const newReport = {
-                        id: `rep-new-${Date.now()}`, 
-                        type: locData ? locData.type : 'Fieldtrip', 
-                        name: item.event, 
-                        loc: locData ? locData.name : 'Unknown', 
-                        date: item.date,
-                        attPct: 100, 
-                        absentList: 'Nihil',
-                        busCount: 1, 
-                        costTicket: parseInt(document.getElementById('rep-inp-tiket').value) || 0,
-                        costFood: parseInt(document.getElementById('rep-inp-konsumsi').value) || 0,
-                        costTrans: parseInt(document.getElementById('rep-inp-transport').value) || 0,
-                        totalPax: 100, 
-                        ratingBus: parseInt(rateBus.value),
-                        ratingFood: parseInt(rateFood.value),
-                        ratingTrans: parseInt(rateLoc.value)
-                    };
-                    MOCK_REPORTS.unshift(newReport); 
-                    renderInformation(); 
-                }
+            try {
+                // Bungkus semua data form review jadi 1 JSON
+                const payloadReview = {
+                    costTicket: parseInt(document.getElementById('rep-inp-tiket').value) || 0,
+                    costFood: parseInt(document.getElementById('rep-inp-konsumsi').value) || 0,
+                    costTrans: parseInt(document.getElementById('rep-inp-transport').value) || 0,
+                    ratingBus: parseInt(rateBus.value),
+                    ratingFood: parseInt(rateFood.value),
+                    ratingTrans: parseInt(rateLoc.value),
+                    reviewBusText: document.getElementById('rev-bus-text').value,
+                    reviewFoodText: document.getElementById('rev-food-text').value,
+                    reviewLocText: document.getElementById('rev-loc-text').value,
+                };
 
-                showToast("Laporan operasional & finansial berhasil disimpan ke Arsip Pusat!", "success");
+                // Tembak Database! Set is_reviewed = true dan simpan json laporannya
+                const { error } = await supabaseApp.from('events').update({ 
+                    is_reviewed: true, 
+                    laporan_evaluasi: payloadReview 
+                }).eq('id', histId);
+                
+                if(error) throw error;
+
+                showToast("Laporan operasional & finansial berhasil disimpan permanen ke Arsip Pusat!", "success");
                 closeModal('review-modal');
-                renderHistory();
-                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Kirim Laporan & Evaluasi`; btn.disabled = false;
-            }, 1000);
+                
+                // Reload dashboard biar narik data asli
+                initDashboard(); 
+            } catch (err) {
+                console.error(err);
+                showToast("Gagal mengirim laporan ke Database.", "error");
+            } finally {
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Kirim Laporan & Evaluasi`; 
+                btn.disabled = false;
+            }
         }
 
         function openReportModal(reportId) {
-            const rep = MOCK_REPORTS.find(r => r.id === reportId);
-            if(!rep) return;
+            const ev = MY_HISTORY.find(r => r.id === reportId);
+            if(!ev || !ev.extendedProps.laporan_evaluasi) return;
+            
+            const rep = ev.extendedProps.laporan_evaluasi;
             const formatMoney = (amount) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
-            const totalTicket = rep.costTicket * rep.totalPax; const totalFood = rep.costFood * rep.totalPax; const totalTrans = rep.costTrans * rep.busCount;
+            
+            // Tarik data real pax & unit bus dari database event
+            const actualPax = ev.extendedProps.pax;
+            const actualBus = ev.extendedProps.busUnit;
+            
+            const totalTicket = rep.costTicket * actualPax; 
+            const totalFood = rep.costFood * actualPax; 
+            const totalTrans = rep.costTrans * actualBus;
             const grandTotal = totalTicket + totalFood + totalTrans;
             const genStars = (rate) => { let s=''; for(let i=0; i<5; i++){s+=`<i class="fa-solid fa-star ${i<rate?'text-aw-yellow':'text-slate-200'}"></i>`;} return s; };
 
-            document.getElementById('rep-tag').innerText = rep.type;
-            document.getElementById('rep-title').innerText = rep.name;
-            document.getElementById('rep-loc').innerHTML = `<i class="fa-solid fa-location-dot"></i> ${rep.loc}`;
-            document.getElementById('rep-date').innerHTML = `<i class="fa-regular fa-calendar-check"></i> ${rep.date}`;
-            document.getElementById('rep-att-pct').innerText = `${rep.attPct}%`;
-            document.getElementById('rep-att-bar').style.width = `${rep.attPct}%`;
-            document.getElementById('rep-absent').innerText = rep.absentList;
-            document.getElementById('rep-bus-count').innerText = `${rep.busCount} Unit`;
+            document.getElementById('rep-tag').innerText = ev.type;
+            document.getElementById('rep-title').innerText = ev.title;
+            document.getElementById('rep-loc').innerHTML = `<i class="fa-solid fa-location-dot"></i> ${ev.extendedProps.loc}`;
+            document.getElementById('rep-date').innerHTML = `<i class="fa-regular fa-calendar-check"></i> ${ev.start}`;
+            
+            // Kita akan buat kalkulasi E-Absensi otomatis di next update, sementara statis 100%
+            document.getElementById('rep-att-pct').innerText = `100%`;
+            document.getElementById('rep-att-bar').style.width = `100%`;
+            document.getElementById('rep-absent').innerText = 'Data e-Absensi belum dikalkulasi.';
+            
+            document.getElementById('rep-bus-count').innerText = `${actualBus} Unit`;
             document.getElementById('rep-cost-ticket').innerText = formatMoney(totalTicket);
             document.getElementById('rep-cost-food').innerText = formatMoney(totalFood);
             document.getElementById('rep-cost-trans').innerText = formatMoney(totalTrans);
@@ -3982,7 +3991,6 @@ function renderAbsensiList() {
 
             openModal('report-modal');
         }
-
         // ==========================================
         // IMPORT CSV LOGIC
         // ==========================================
