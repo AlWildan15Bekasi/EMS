@@ -656,18 +656,6 @@
                     </div>
                 </div>
                 
-                <!-- ============================================== -->
-                <!-- LEMBAR HALAMAN 2: Bukti Transaksi (Khusus Print)-->
-                <!-- ============================================== -->
-                <div class="hidden print:block print-page-break w-full max-w-3xl mx-auto pt-10">
-                    <div class="text-center mb-6">
-                        <h2 class="text-xl font-black text-slate-800 uppercase tracking-widest">Lampiran Bukti Transaksi</h2>
-                        <p class="text-sm text-slate-500 mt-1">Laporan Operasional & Finansial</p>
-                        <div class="w-full border-b-2 border-slate-800 mt-4 mb-8"></div>
-                    </div>
-                    <!-- Ini akan diganti dengan file foto struk/kwitansi asli nantinya -->
-                    <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=800&q=80" alt="Bukti Bayar" class="w-full max-w-2xl mx-auto rounded-xl border border-slate-300 shadow-sm object-contain max-h-[800px]">
-                </div>
 
             </div>
         </div>
@@ -1837,6 +1825,81 @@
         // ==========================================
         // RENDER UI & DASHBOARD
         // ==========================================
+        let activeReportEventId = null;
+
+        // Helper Cerdas: Menghitung Statistik Riil dari E-Absensi & Plotting Bus
+        function calculateRealAttendance(ev) {
+            let totalPax = ev.extendedProps.pax || 0;
+            let hadirCount = 0;
+            let makanCount = 0;
+            let absentNames = [];
+            let busConfigs = ev.extendedProps.konfigurasi_bus;
+
+            if (typeof busConfigs === 'string') {
+                try { busConfigs = JSON.parse(busConfigs); } catch(e) { busConfigs = []; }
+            }
+
+            let seatedPassengers = [];
+            if (Array.isArray(busConfigs) && busConfigs.length > 0) {
+                busConfigs.forEach(bus => {
+                    if (Array.isArray(bus.passengers)) {
+                        bus.passengers.forEach(p => {
+                            if (p) seatedPassengers.push(p);
+                        });
+                    }
+                });
+            }
+
+            if (seatedPassengers.length > 0) {
+                totalPax = seatedPassengers.length;
+                seatedPassengers.forEach(p => {
+                    const isHadir = p.hadir !== false;
+                    const isMakan = p.makan !== false;
+                    if (isHadir) {
+                        hadirCount++;
+                    } else {
+                        let label = p.type === 'Guru' ? 'Guru' : (p.class || 'Siswa');
+                        absentNames.push(`${absentNames.length + 1}. ${p.name} (${label})`);
+                    }
+                    if (isMakan) makanCount++;
+                });
+            } else {
+                // Fallback jika belum di-plot ke kursi bus, cek dari daftar_siswa & daftar_guru
+                let rawSiswa = typeof ev.extendedProps.daftar_siswa === 'string' ? JSON.parse(ev.extendedProps.daftar_siswa) : (ev.extendedProps.daftar_siswa || []);
+                let rawGuru = typeof ev.extendedProps.daftar_guru === 'string' ? JSON.parse(ev.extendedProps.daftar_guru) : (ev.extendedProps.daftar_guru || []);
+                let allRaw = [...rawGuru.map(g => ({...g, isGuru: true})), ...rawSiswa.map(s => ({...s, isGuru: false}))];
+                
+                if (allRaw.length > 0) {
+                    totalPax = allRaw.length;
+                    allRaw.forEach(item => {
+                        if (item.hadir !== false) {
+                            hadirCount++;
+                        } else {
+                            let person = item.isGuru ? MOCK_GURU.find(g => g.id === item.id) : MOCK_STUDENTS.find(s => s.id === item.id);
+                            let name = person ? person.name : `ID #${item.id}`;
+                            let role = item.isGuru ? 'Guru' : (person ? person.class : 'Siswa');
+                            absentNames.push(`${absentNames.length + 1}. ${name} (${role})`);
+                        }
+                        if (item.makan !== false) makanCount++;
+                    });
+                } else {
+                    hadirCount = totalPax;
+                    makanCount = ev.extendedProps.catPax || totalPax;
+                }
+            }
+
+            let attPct = totalPax > 0 ? Math.round((hadirCount / totalPax) * 100) : 100;
+            return {
+                totalPax,
+                hadirCount,
+                makanCount,
+                attPct,
+                absentList: absentNames.length > 0 ? absentNames.join('\n') : 'Nihil (Semua Hadir 100%)',
+                busCount: (Array.isArray(busConfigs) && busConfigs.length > 0) ? busConfigs.length : (ev.extendedProps.busUnit || 0),
+                busConfigs: Array.isArray(busConfigs) ? busConfigs : []
+            };
+        }
+
         function renderInformation() {
             document.getElementById('stat-siswa').innerText = MOCK_STUDENTS.length;
             document.getElementById('stat-guru').innerText = MOCK_GURU.length;
@@ -1902,11 +1965,9 @@
                 planContainer.innerHTML = planHtml;
             }
 
-            // --- FASE 3: LOAD LAPORAN REAL DARI DB ---
+            // --- OVERVIEW LAPORAN KEGIATAN (REAL DB + TOMBOL HAPUS "X") ---
             const overviewContainer = document.getElementById('overview-report-cards');
             let ovHtml = '';
-            
-            // Filter hanya histori yang sudah di-review dan punya JSON laporan_evaluasi
             const reviewedEvents = MY_HISTORY.filter(h => h.extendedProps.isReviewed && h.extendedProps.laporan_evaluasi);
             
             if(reviewedEvents.length === 0) {
@@ -1914,18 +1975,24 @@
             } else {
                 reviewedEvents.forEach(rep => {
                     let colorTheme = rep.type === 'Fieldtrip' ? 'aw-blue' : (rep.type === 'Outing Class' ? 'aw-green' : 'aw-yellow');
+                    const stats = calculateRealAttendance(rep);
                     ovHtml += `
-                        <div class="glass-card p-5 border-t-4 border-t-${colorTheme} hover:-translate-y-1 transition-transform flex flex-col h-full cursor-pointer" onclick="openReportModal(${rep.id})">
-                            <div class="flex justify-between items-start mb-2">
+                        <div class="glass-card p-5 border-t-4 border-t-${colorTheme} hover:-translate-y-1 transition-transform flex flex-col h-full cursor-pointer relative group" onclick="openReportModal(${rep.id})">
+                            <!-- Tombol X Hapus Laporan -->
+                            <button onclick="deleteReport(event, ${rep.id})" class="absolute top-3 right-3 w-7 h-7 rounded-full bg-slate-100 hover:bg-red-500 text-slate-400 hover:text-white flex items-center justify-center transition-colors z-10 shadow-sm" title="Hapus Laporan Evaluasi">
+                                <i class="fa-solid fa-times text-xs"></i>
+                            </button>
+
+                            <div class="flex justify-between items-start mb-2 pr-8">
                                 <span class="text-[9px] font-black uppercase tracking-widest text-${colorTheme} bg-${colorTheme.replace('aw-', '')}-50 px-2 py-1 rounded border border-${colorTheme.replace('aw-', '')}-100">${rep.type}</span>
                                 <span class="text-[10px] font-bold text-slate-400"><i class="fa-regular fa-calendar"></i> ${rep.start}</span>
                             </div>
                             <h4 class="font-black text-slate-800 text-lg mb-1 leading-tight line-clamp-2">${rep.title}</h4>
-                            <p class="text-xs font-medium text-slate-500 mb-5 flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-slate-400"></i> ${rep.extendedProps.loc}</p>
+                            <p class="text-xs font-medium text-slate-500 mb-4 flex items-center gap-1.5"><i class="fa-solid fa-location-dot text-slate-400"></i> ${rep.extendedProps.loc}</p>
                             
                             <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
                                 <div class="flex items-center gap-2 text-xs font-bold text-slate-600">
-                                    <div class="w-6 h-6 rounded bg-emerald-50 text-emerald-500 flex items-center justify-center"><i class="fa-solid fa-check"></i></div> Terekam Pusat
+                                    <div class="w-6 h-6 rounded bg-emerald-50 text-emerald-500 flex items-center justify-center"><i class="fa-solid fa-user-check"></i></div> Hadir: ${stats.attPct}%
                                 </div>
                                 <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 group-hover:text-aw-blue transition-colors">Buka Analisis ➔</span>
                             </div>
@@ -1935,6 +2002,26 @@
             }
         }
 
+        // Fungsi Hapus Laporan Evaluasi (Tombol X)
+        async function deleteReport(e, eventId) {
+            e.stopPropagation(); // Mencegah modal terbuka saat klik tombol X
+            if(!confirm("Yakin ingin menghapus Laporan Evaluasi ini? Status acara akan dikembalikan menjadi 'Wajib Isi Laporan' di menu Histori.")) return;
+            
+            try {
+                showToast("Menghapus laporan...", "info");
+                const { error } = await supabaseApp.from('events').update({
+                    is_reviewed: false,
+                    laporan_evaluasi: null
+                }).eq('id', eventId);
+
+                if(error) throw error;
+                showToast("Laporan berhasil dihapus!", "success");
+                await initDashboard();
+            } catch(err) {
+                console.error(err);
+                showToast("Gagal menghapus laporan.", "error");
+            }
+        }
         // ==========================================
         // KATALOG VIEW LOGIC
         // ==========================================
@@ -4143,6 +4230,146 @@ function renderAbsensiList() {
 
             openModal('report-modal');
         }
+
+        // Fungsi Cetak PDF Laporan Akhir (Lengkap: Finansial + E-Absensi + Denah Bus + Lampiran Nota)
+        function downloadPDFLaporanAkhir() {
+            const ev = MY_HISTORY.find(r => r.id === activeReportEventId);
+            if (!ev || !ev.extendedProps.laporan_evaluasi) return showToast("Data laporan tidak ditemukan.", "error");
+
+            const rep = ev.extendedProps.laporan_evaluasi;
+            const stats = calculateRealAttendance(ev);
+            const formatMoney = (amount) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+
+            const totalTicket = rep.costTicket * stats.hadirCount;
+            const totalFood = rep.costFood * stats.makanCount;
+            const totalTrans = rep.costTrans * stats.busCount;
+            const grandTotal = totalTicket + totalFood + totalTrans;
+            const starStr = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
+
+            // 1. Rakit Bagian Ringkasan Eksekutif & Finansial
+            let html = `
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px 18px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-size: 9px; font-weight: 900; color: #2563eb; text-transform: uppercase; letter-spacing: 1px;">${ev.type}</span>
+                        <h3 style="margin: 2px 0; font-size: 16px; color: #0f172a; font-weight: 900;">${ev.title}</h3>
+                        <p style="margin: 0; font-size: 11px; color: #475569;">Lokasi: <strong>${ev.extendedProps.loc}</strong></p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 0; font-size: 9px; color: #64748b; text-transform: uppercase; font-weight: bold;">Tanggal Pelaksanaan</p>
+                        <p style="margin: 2px 0 0 0; font-size: 13px; color: #1e3a8a; font-weight: 900;">${ev.start}</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 14px; margin-bottom: 18px;">
+                    <div style="flex: 1; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px;">
+                        <h4 style="margin: 0 0 8px 0; font-size: 11px; color: #1e3a8a; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Rekap Kehadiran (E-Absensi)</h4>
+                        <p style="font-size: 11px; margin: 4px 0;">Persentase Kehadiran: <strong style="color: #10b981; font-size: 13px;">${stats.attPct}%</strong> (${stats.hadirCount} dari ${stats.totalPax} Pax)</p>
+                        <p style="font-size: 11px; margin: 4px 0;">Penerima Konsumsi: <strong>${stats.makanCount} Pax</strong></p>
+                        <p style="font-size: 10px; color: #64748b; margin: 8px 0 3px 0; font-weight: bold;">Daftar Tidak Hadir (Alfa/Izin):</p>
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; font-size: 9.5px; color: #334155; white-space: pre-line;">${stats.absentList}</div>
+                    </div>
+
+                    <div style="flex: 1; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px;">
+                        <h4 style="margin: 0 0 8px 0; font-size: 11px; color: #1e3a8a; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Evaluasi Vendor & Lokasi</h4>
+                        <p style="font-size: 10.5px; margin: 4px 0;"><strong>Armada Bus (${ stats.busCount } Unit):</strong> <span style="color: #f59e0b;">${starStr(rep.ratingBus)}</span><br><span style="color:#475569; font-size:9.5px;">"${rep.reviewBusText || '-'}"</span></p>
+                        <p style="font-size: 10.5px; margin: 6px 0;"><strong>Konsumsi / Catering:</strong> <span style="color: #f59e0b;">${starStr(rep.ratingFood)}</span><br><span style="color:#475569; font-size:9.5px;">"${rep.reviewFoodText || '-'}"</span></p>
+                        <p style="font-size: 10.5px; margin: 6px 0 0 0;"><strong>Fasilitas Lokasi:</strong> <span style="color: #f59e0b;">${starStr(rep.ratingTrans)}</span><br><span style="color:#475569; font-size:9.5px;">"${rep.reviewLocText || '-'}"</span></p>
+                    </div>
+                </div>
+
+                <div style="border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 11px; color: #1e3a8a; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Realisasi Biaya Operasional (Berdasarkan E-Absensi)</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                        <tr style="border-bottom: 1px dashed #e2e8f0;">
+                            <td style="padding: 6px 0; color: #475569;">1. Tiket Masuk / HTM (${stats.hadirCount} Peserta Hadir × ${formatMoney(rep.costTicket)})</td>
+                            <td style="padding: 6px 0; text-align: right; font-weight: bold;">${formatMoney(totalTicket)}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px dashed #e2e8f0;">
+                            <td style="padding: 6px 0; color: #475569;">2. Konsumsi / Catering (${stats.makanCount} Porsi Terdistribusi × ${formatMoney(rep.costFood)})</td>
+                            <td style="padding: 6px 0; text-align: right; font-weight: bold;">${formatMoney(totalFood)}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #cbd5e1;">
+                            <td style="padding: 6px 0; color: #475569;">3. Sewa Armada Bus (${stats.busCount} Unit Armada × ${formatMoney(rep.costTrans)})</td>
+                            <td style="padding: 6px 0; text-align: right; font-weight: bold;">${formatMoney(totalTrans)}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px 0 0 0; font-size: 12px; font-weight: 900; color: #1e3a8a; text-transform: uppercase;">Total Biaya Operasional Aktual</td>
+                            <td style="padding: 10px 0 0 0; text-align: right; font-size: 14px; font-weight: 900; color: #10b981;">${formatMoney(grandTotal)}</td>
+                        </tr>
+                    </table>
+                </div>
+            `;
+
+            // 2. Lampirkan Rangkuman Denah Bus jika ada
+            if (stats.busConfigs && stats.busConfigs.length > 0) {
+                html += `<h4 style="margin: 15px 0 10px 0; font-size: 12px; color: #1e3a8a; text-transform: uppercase; text-align: center;">Lampiran Denah Plotting Armada Bus</h4>`;
+                html += `<div style="display: flex; flex-direction: column; gap: 16px; align-items: center;">`;
+                stats.busConfigs.forEach(bus => {
+                    const is22 = bus.layout === '2-2';
+                    let L = bus.kapasitas % 2 !== 0 ? 5 : 6; 
+                    let R = is22 ? 4 : 5; 
+                    let doorSeats = R - 2; 
+                    let normalSeatCount = bus.kapasitas - L - doorSeats;
+                    let rowsHtml = ''; let seatIndex = 0;
+
+                    while (normalSeatCount > 0) {
+                        let seatsInThisRow = Math.min(R, normalSeatCount);
+                        rowsHtml += `<div style="display: flex; gap: 5px; width: 100%; margin-bottom: 4px; align-items: center;">`;
+                        for (let c = 0; c < R; c++) {
+                            if (c === 2) rowsHtml += `<div style="width: 18px; flex-shrink: 0;"></div>`;
+                            if (c < seatsInThisRow) {
+                                let p = bus.passengers ? bus.passengers[seatIndex] : null;
+                                rowsHtml += generatePDFSeatBox(p, seatIndex + 1);
+                                seatIndex++;
+                            } else { rowsHtml += `<div style="flex: 1;"></div>`; }
+                        }
+                        rowsHtml += `</div>`;
+                        normalSeatCount -= seatsInThisRow;
+                    }
+
+                    rowsHtml += `<div style="display: flex; gap: 5px; width: 100%; margin-bottom: 4px; align-items: center;">
+                        <div style="flex: 1; height: 36px; border: 1px dashed #94a3b8; border-radius: 5px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; color: #64748b;">PINTU</div>
+                        <div style="flex: 1; height: 36px; border: 1px dashed #cbd5e1; border-radius: 5px; background: #f8fafc;"></div>
+                        <div style="width: 18px; flex-shrink: 0;"></div>`;
+                    for (let c = 0; c < doorSeats; c++) {
+                        let p = bus.passengers ? bus.passengers[seatIndex] : null;
+                        rowsHtml += generatePDFSeatBox(p, seatIndex + 1);
+                        seatIndex++;
+                    }
+                    rowsHtml += `</div>`;
+
+                    rowsHtml += `<div style="display: flex; gap: 5px; width: 100%; margin-top: 2px; align-items: center;">`;
+                    for (let c = 0; c < L; c++) {
+                        let p = bus.passengers ? bus.passengers[seatIndex] : null;
+                        rowsHtml += generatePDFSeatBox(p, seatIndex + 1);
+                        seatIndex++;
+                    }
+                    rowsHtml += `</div>`;
+
+                    html += `
+                    <div class="pdf-bus-card" style="width: 100%; max-width: 500px; border: 2px solid #94a3b8; border-radius: 14px; overflow: hidden; background: #f8fafc; page-break-inside: avoid; break-inside: avoid;">
+                        <div style="background: #1e293b; color: #fff; padding: 5px 10px; text-align: center;">
+                            <strong style="font-size: 11px; text-transform: uppercase;">${bus.nama} (${bus.gender} • ${bus.kapasitas} Kursi)</strong>
+                        </div>
+                        <div style="padding: 10px;">${rowsHtml}</div>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+
+            // 3. Lampirkan Foto Nota jika diupload
+            if (rep.notaUrl) {
+                html += `
+                    <div class="pdf-bus-card" style="margin-top: 20px; text-align: center; page-break-inside: avoid; break-inside: avoid;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 12px; color: #1e3a8a; text-transform: uppercase;">Lampiran Bukti Transaksi / Nota</h4>
+                        <img src="${rep.notaUrl}" style="max-width: 100%; max-height: 550px; object-fit: contain; border: 1px solid #cbd5e1; border-radius: 8px; padding: 4px; display: inline-block;">
+                    </div>
+                `;
+            }
+
+            printA4PDF(`LAPORAN_EVALUASI_${ev.title.replace(/\s+/g, '_')}`, html, false);
+        }
+        
         // ==========================================
         // IMPORT CSV LOGIC
         // ==========================================
