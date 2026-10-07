@@ -931,6 +931,33 @@
         </div>
     </div>
 
+    <!-- ACTION SEAT MODAL (MINI POPUP PINDAH/TUKAR) -->
+    <div id="action-seat-modal" class="hidden fixed inset-0 z-[1100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col relative overflow-hidden border border-slate-100 p-5">
+            <button onclick="closeModal('action-seat-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 transition-colors"><i class="fa-solid fa-times"></i></button>
+            <h3 class="font-black text-slate-800 text-lg mb-1 border-b border-slate-100 pb-3">Aksi Penumpang</h3>
+            <div class="py-4 text-center">
+                <div class="w-12 h-12 bg-blue-50 text-aw-blue rounded-full flex items-center justify-center text-xl mx-auto mb-2"><i class="fa-solid fa-user"></i></div>
+                <h4 id="action-seat-name" class="font-black text-slate-700 text-base leading-tight">Nama Siswa</h4>
+                <p id="action-seat-class" class="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Kelas</p>
+            </div>
+            
+            <div class="space-y-3">
+                <button onclick="activateSwapMode()" class="w-full py-3 bg-aw-yellow hover:bg-amber-400 text-aw-navy font-black rounded-xl shadow-sm transition-all flex justify-center items-center gap-2"><i class="fa-solid fa-people-arrows"></i> Geser / Tukar Posisi</button>
+                
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase">Pindahkan ke Bus Lain</label>
+                    <div class="flex gap-2">
+                        <select id="action-seat-bus-select" class="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none"></select>
+                        <button onclick="moveToOtherBus()" class="bg-aw-blue hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors" title="Pindahkan"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+                
+                <button onclick="kickToWaitRoom()" class="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-500 font-bold rounded-xl transition-all flex justify-center items-center gap-2 text-xs"><i class="fa-solid fa-door-open"></i> Kembalikan ke Ruang Tunggu</button>
+            </div>
+        </div>
+    </div>    
+
     <!-- View Login (BRIGHTER & FLOATING) -->
     <div id="view-login" class="fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-700">
         <div class="bg-white p-8 md:p-12 w-full max-w-md relative z-10 border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-3xl">
@@ -3161,20 +3188,20 @@
             document.getElementById('man-fase-1').classList.remove('hidden');
         }
 
-        // --- INTI DARI STAGE 9: MELUKIS DENAH BUS ---
+// --- INTI DARI STAGE 9: MELUKIS DENAH BUS ---
         
         let pendingPlotSiswa = [];
         let pendingPlotGuru = [];
         let selectedPassenger = null;
         let lastLoadedEventId = null;
+        let actionSeatData = null; // Menyimpan data sementara untuk modal aksi
 
-        // Helper pemotong nama otomatis (Maks 3 kata, format center 2 baris)
+        // Helper pemotong nama otomatis
         function formatName(name) {
             if(!name) return '-';
             let words = name.split(' ');
             if (words.length === 1) return words[0];
             if (words.length === 2) return `${words[0]}<br>${words[1]}`;
-            // Jika 3 kata atau lebih, gabung kata 1 & 2 di atas, kata ke 3 di bawah
             return `${words[0]} ${words[1]}<br>${words[2]}`;
         }
 
@@ -3185,24 +3212,20 @@
             btn.disabled = true;
 
             try {
-                // Tembakkan susunan kursi saat ini (yang ada di currentBusConfigs) ke Supabase
                 const { error } = await supabaseApp.from('events')
                     .update({ konfigurasi_bus: currentBusConfigs })
                     .eq('id', activeEventManifest.id);
                 
                 if (error) throw error;
-                showToast("Hasil Plotting Kursi berhasil dikunci ke Database!", "success");
+                showToast("Susunan kursi berhasil dikunci ke Database!", "success");
             } catch (err) {
-                console.error(err);
-                showToast("Gagal menyimpan hasil plotting.", "error");
+                console.error(err); showToast("Gagal menyimpan susunan kursi.", "error");
             } finally {
-                btn.innerHTML = originalText; 
-                btn.disabled = false;
+                btn.innerHTML = originalText; btn.disabled = false;
             }
         }
 
         function initVisualDenahBus() {
-            // Ambil semua daftar siswa dan guru yang diundang ke acara ini
             const rawSiswa = typeof activeEventManifest.extendedProps.daftar_siswa === 'string' ? JSON.parse(activeEventManifest.extendedProps.daftar_siswa) : (activeEventManifest.extendedProps.daftar_siswa || []);
             const rawGuru = typeof activeEventManifest.extendedProps.daftar_guru === 'string' ? JSON.parse(activeEventManifest.extendedProps.daftar_guru) : (activeEventManifest.extendedProps.daftar_guru || []);
 
@@ -3210,30 +3233,22 @@
                 const s = MOCK_STUDENTS.find(m => m.id === rs.id);
                 return { ...rs, name: s ? s.name : 'Unknown', jenjang: s ? s.jenjang : '', class: s ? s.class : '' };
             });
-            
             let tempGuru = rawGuru.map(rg => {
                 const g = MOCK_GURU.find(m => m.id === rg.id);
                 return { ...rg, name: g ? g.name : 'Unknown', type: 'Guru' };
             });
 
-            // Persiapkan array kursi kosong untuk bus jika belum ada isinya
-            let seatedIds = new Set(); // Variabel untuk mengingat siapa saja yang sudah duduk
-            
+            let seatedIds = new Set();
             currentBusConfigs.forEach(b => {
                 if(!b.passengers || b.passengers.length !== b.kapasitas) {
                     b.passengers = new Array(b.kapasitas).fill(null);
                 } else {
-                    // Kalau ternyata kursinya udah terisi dari database, catat ID anak/gurunya
-                    b.passengers.forEach(p => {
-                        if(p && p.id) seatedIds.add(p.id);
-                    });
+                    b.passengers.forEach(p => { if(p && p.id) seatedIds.add(p.id); });
                 }
             });
 
-            // Masukkan ke ruang tunggu HANYA orang-orang yang belum dapat kursi (belum ada di seatedIds)
             pendingPlotSiswa = tempSiswa.filter(s => !seatedIds.has(s.id));
             pendingPlotGuru = tempGuru.filter(g => !seatedIds.has(g.id));
-
             lastLoadedEventId = activeEventManifest.id;
             selectedPassenger = null;
             
@@ -3248,59 +3263,58 @@
             currentBusConfigs.forEach(bus => {
                 let colorTheme = bus.gender === 'Ikhwan' ? 'text-aw-blue' : (bus.gender === 'Akhwat' ? 'text-rose-500' : 'text-slate-600');
                 const is22 = bus.layout === '2-2';
-                const kursiPerBaris = is22 ? 4 : 5;
-                const totalBaris = Math.ceil(bus.kapasitas / kursiPerBaris);
-
+                
+                // --- LOGIKA BARU: PINTU DI KIRI BELAKANG ---
+                let L = bus.kapasitas < 50 ? 5 : 6; // Kursi paling belakang
+                let R = is22 ? 4 : 5; // Standar per baris
+                let doorSeats = R - 2; // Sisa kursi di sebelah kanan pintu
+                let normalSeatCount = bus.kapasitas - L - doorSeats;
+                
                 let seatsHtml = '<div class="flex flex-col gap-2 p-2">';
                 let seatIndex = 0;
 
-                for (let r = 0; r < totalBaris; r++) {
-                    let isLastRow = (r === totalBaris - 1);
+                // 1. Baris Normal (Depan sampai sebelum pintu)
+                while (normalSeatCount > 0) {
+                    let seatsInThisRow = Math.min(R, normalSeatCount);
                     seatsHtml += `<div class="flex justify-between gap-1 w-full">`;
-                    
-                    let cols = is22 ? 5 : 6;
-                    for (let c = 0; c < cols; c++) {
-                        if (seatIndex >= bus.kapasitas) {
-                            seatsHtml += `<div class="flex-1"></div>`; 
-                            continue;
+                    for (let c = 0; c < R; c++) {
+                        if (c === 2) seatsHtml += `<div class="w-4 shrink-0"></div>`; // Lorong tengah
+                        if (c < seatsInThisRow) {
+                            seatsHtml += generateSeatHtml(bus, seatIndex++);
+                        } else {
+                            seatsHtml += `<div class="flex-1"></div>`; // Ruang kosong sisa
                         }
-
-                        if (!isLastRow && ((is22 && c === 2) || (!is22 && c === 2))) {
-                            seatsHtml += `<div class="w-4 shrink-0"></div>`; 
-                            continue;
-                        }
-
-                        let p = bus.passengers[seatIndex];
-                        let boxClass = p ? (p.type === 'Guru' ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-blue-50 border-blue-200 text-aw-navy') : 'bg-white border-slate-200 text-slate-400';
-                        let selClass = (selectedPassenger && selectedPassenger.source === 'bus' && selectedPassenger.busId === bus.id && selectedPassenger.seatIdx === seatIndex) ? 'ring-2 ring-aw-yellow ring-offset-1 border-aw-yellow z-10 scale-105 shadow-md' : '';
-                        
-                        let seatName = p ? formatName(p.name) : '<i class="fa-solid fa-plus opacity-30"></i>';
-                        let titleHover = p ? p.name : 'Kursi Kosong (Klik untuk isi)';
-
-                        seatsHtml += `
-                        <div onclick="handleSeatClick('${bus.id}', ${seatIndex})" title="${titleHover}" class="flex-1 h-10 ${boxClass} ${selClass} border rounded shadow-sm flex flex-col items-center justify-center text-[8.5px] leading-[1.15] font-bold cursor-pointer hover:border-aw-yellow transition-all overflow-hidden relative px-0.5 py-1">
-                            <span class="w-full text-center">${seatName}</span>
-                        </div>`;
-                        seatIndex++;
                     }
                     seatsHtml += `</div>`;
+                    normalSeatCount -= seatsInThisRow;
                 }
+
+                // 2. Baris Pintu (Kedua dari belakang, 2 kursi kiri dihapus)
+                seatsHtml += `<div class="flex justify-between gap-1 w-full">`;
+                seatsHtml += `<div class="flex-1 border border-dashed border-slate-300/50 rounded flex items-center justify-center bg-slate-200/30 text-[8px] text-slate-400 font-bold uppercase"><i class="fa-solid fa-door-open mr-1"></i>Pintu</div><div class="flex-1 border border-dashed border-slate-300/50 rounded flex items-center justify-center bg-slate-200/20"></div>`; 
+                seatsHtml += `<div class="w-4 shrink-0"></div>`; // Lorong
+                for (let c = 0; c < doorSeats; c++) {
+                    seatsHtml += generateSeatHtml(bus, seatIndex++);
+                }
+                seatsHtml += `</div>`;
+
+                // 3. Baris Paling Belakang (Full 5 atau 6 tanpa lorong tengah)
+                seatsHtml += `<div class="flex justify-between gap-1 w-full mt-1">`;
+                for (let c = 0; c < L; c++) {
+                    seatsHtml += generateSeatHtml(bus, seatIndex++);
+                }
+                seatsHtml += `</div>`;
+                
                 seatsHtml += '</div>';
 
                 busHtml += `
                 <div class="w-72 bg-white rounded-t-3xl rounded-b-xl shadow-lg border-2 border-slate-300 flex flex-col shrink-0 overflow-hidden relative">
-                    <!-- Dashboard Supir & Kernet -->
                     <div class="h-20 bg-slate-200 border-b-4 border-slate-300 relative shrink-0">
-                        <!-- Kaca Depan -->
                         <div class="absolute inset-x-4 top-2 h-6 bg-cyan-100/50 border border-cyan-200 rounded-t-full shadow-inner opacity-60"></div>
-                        
-                        <!-- KERNET (KIRI) -->
                         <div class="absolute bottom-1.5 left-4 flex flex-col items-center">
                             <div class="w-7 h-7 bg-slate-300 rounded border border-slate-400 flex items-center justify-center shadow-sm"><i class="fa-solid fa-user-astronaut text-slate-500 text-[10px]"></i></div>
                             <span class="text-[8px] font-black text-slate-500 uppercase mt-0.5 tracking-wider">Kernet</span>
                         </div>
-                        
-                        <!-- DRIVER (KANAN) -->
                         <div class="absolute bottom-1 right-4 flex flex-col items-center">
                             <div class="w-9 h-9 bg-slate-700 rounded-full border-4 border-slate-800 flex items-center justify-center shadow-lg"><i class="fa-solid fa-steering-wheel text-white/50 text-xs"></i></div>
                             <span class="text-[8px] font-black text-slate-600 uppercase mt-0.5 tracking-wider">Driver</span>
@@ -3317,6 +3331,20 @@
             });
             
             canvas.innerHTML = busHtml;
+        }
+
+        function generateSeatHtml(bus, seatIndex) {
+            let p = bus.passengers[seatIndex];
+            let boxClass = p ? (p.type === 'Guru' ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-blue-50 border-blue-200 text-aw-navy') : 'bg-white border-slate-200 text-slate-400';
+            let selClass = (selectedPassenger && selectedPassenger.source === 'bus' && selectedPassenger.busId === bus.id && selectedPassenger.seatIdx === seatIndex) ? 'ring-2 ring-aw-yellow ring-offset-1 border-aw-yellow z-10 scale-105 shadow-md bg-yellow-50' : '';
+            
+            let seatName = p ? formatName(p.name) : '<i class="fa-solid fa-plus opacity-30"></i>';
+            let titleHover = p ? p.name : 'Kursi Kosong (Klik untuk isi)';
+
+            return `
+            <div onclick="handleSeatClick('${bus.id}', ${seatIndex})" title="${titleHover}" class="flex-1 h-10 ${boxClass} ${selClass} border rounded shadow-sm flex flex-col items-center justify-center text-[8.5px] leading-[1.15] font-bold cursor-pointer hover:border-aw-yellow transition-all overflow-hidden relative px-0.5 py-1">
+                <span class="w-full text-center">${seatName}</span>
+            </div>`;
         }
 
         function renderWaitingRoom() {
@@ -3349,7 +3377,7 @@
                 </div>`;
             });
 
-            if(total === 0) html = `<div class="text-center p-4 text-slate-400 text-xs font-bold italic">Semua sudah ter-plot!</div>`;
+            if(total === 0) html = `<div class="text-center p-4 text-slate-400 text-xs font-bold italic">Semua sudah masuk ke dalam bus.</div>`;
             waitRoom.innerHTML = html;
         }
 
@@ -3363,35 +3391,92 @@
             renderVisualDenahBus();
         }
 
+        // --- NEW ACTION MENU FUNCTIONS ---
+        function openActionSeatModal(busId, seatIdx, data) {
+            actionSeatData = { busId, seatIdx, data };
+            document.getElementById('action-seat-name').innerText = data.name;
+            document.getElementById('action-seat-class').innerText = data.type === 'Guru' ? 'Guru Pendamping' : data.class;
+            
+            const busSelect = document.getElementById('action-seat-bus-select');
+            let opts = '<option value="">- Pilih Bus Tujuan -</option>';
+            currentBusConfigs.forEach(b => {
+                if(b.id !== busId) {
+                    const sisa = b.passengers.filter(p => !p).length;
+                    opts += `<option value="${b.id}">${b.nama} (Sisa: ${sisa} Kursi)</option>`;
+                }
+            });
+            busSelect.innerHTML = opts;
+            openModal('action-seat-modal');
+        }
+
+        function activateSwapMode() {
+            selectedPassenger = { source: 'bus', data: actionSeatData.data, busId: actionSeatData.busId, seatIdx: actionSeatData.seatIdx };
+            closeModal('action-seat-modal');
+            renderVisualDenahBus();
+            showToast("Klik kursi kosong atau penumpang lain untuk menggeser/menukar posisi.", "info");
+        }
+
+        function moveToOtherBus() {
+            const targetBusId = document.getElementById('action-seat-bus-select').value;
+            if(!targetBusId) return showToast("Pilih bus tujuan terlebih dahulu!", "error");
+            
+            let targetBus = currentBusConfigs.find(b => b.id === targetBusId);
+            let sourceBus = currentBusConfigs.find(b => b.id === actionSeatData.busId);
+            
+            let emptyIdx = targetBus.passengers.findIndex(p => p === null);
+            if(emptyIdx === -1) return showToast("Gagal! Bus tujuan sudah penuh.", "error");
+            
+            targetBus.passengers[emptyIdx] = actionSeatData.data;
+            sourceBus.passengers[actionSeatData.seatIdx] = null;
+            
+            closeModal('action-seat-modal');
+            renderVisualDenahBus();
+            showToast(`Berhasil dipindah ke ${targetBus.nama}`, "success");
+        }
+
+        function kickToWaitRoom() {
+            let sourceBus = currentBusConfigs.find(b => b.id === actionSeatData.busId);
+            if(actionSeatData.data.type === 'Guru') pendingPlotGuru.push(actionSeatData.data);
+            else pendingPlotSiswa.push(actionSeatData.data);
+            
+            sourceBus.passengers[actionSeatData.seatIdx] = null;
+            
+            closeModal('action-seat-modal');
+            renderVisualDenahBus();
+            showToast("Penumpang dikembalikan ke ruang tunggu.", "success");
+        }
+
         function handleSeatClick(busId, seatIdx) {
             let bus = currentBusConfigs.find(b => b.id === busId);
             let currentSeatData = bus.passengers[seatIdx];
 
-            if (!selectedPassenger) {
-                if(currentSeatData) {
-                    selectedPassenger = { source: 'bus', data: currentSeatData, busId: busId, seatIdx: seatIdx };
-                    renderVisualDenahBus();
+            // STATE 1: SEDANG MAU MENARUH/MENUKAR (SWAP MODE)
+            if (selectedPassenger) {
+                if (selectedPassenger.source === 'wait') {
+                    if (currentSeatData) {
+                        // Tolak jika kursi sudah diisi (Ruang tunggu hanya bisa ngisi kursi kosong)
+                        if(currentSeatData.type === 'Guru') pendingPlotGuru.push(currentSeatData);
+                        else pendingPlotSiswa.push(currentSeatData);
+                    }
+                    let pList = selectedPassenger.listType === 'Guru' ? pendingPlotGuru : pendingPlotSiswa;
+                    pList.splice(selectedPassenger.listIdx, 1);
+                    bus.passengers[seatIdx] = selectedPassenger.data;
+                } 
+                else if (selectedPassenger.source === 'bus') {
+                    // TUKAR / GESER POSISI
+                    let sourceBus = currentBusConfigs.find(b => b.id === selectedPassenger.busId);
+                    sourceBus.passengers[selectedPassenger.seatIdx] = currentSeatData; 
+                    bus.passengers[seatIdx] = selectedPassenger.data;
                 }
+                selectedPassenger = null;
+                renderVisualDenahBus();
                 return;
             }
 
-            if (selectedPassenger.source === 'wait') {
-                if (currentSeatData) {
-                    if(currentSeatData.type === 'Guru') pendingPlotGuru.push(currentSeatData);
-                    else pendingPlotSiswa.push(currentSeatData);
-                }
-                let pList = selectedPassenger.listType === 'Guru' ? pendingPlotGuru : pendingPlotSiswa;
-                pList.splice(selectedPassenger.listIdx, 1);
-                bus.passengers[seatIdx] = selectedPassenger.data;
-            } 
-            else if (selectedPassenger.source === 'bus') {
-                let sourceBus = currentBusConfigs.find(b => b.id === selectedPassenger.busId);
-                sourceBus.passengers[selectedPassenger.seatIdx] = currentSeatData; 
-                bus.passengers[seatIdx] = selectedPassenger.data;
+            // STATE 2: KLIK KURSI BERISI UNTUK BUKA MENU AKSI
+            if (currentSeatData) {
+                openActionSeatModal(busId, seatIdx, currentSeatData);
             }
-
-            selectedPassenger = null;
-            renderVisualDenahBus();
         }
 
         function autoPlotBus() {
@@ -3399,7 +3484,7 @@
             if(btn) { btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Memproses...`; btn.disabled = true; }
             
             setTimeout(() => {
-                // 1. Reset: Kembalikan semua penumpang dari bus ke ruang tunggu
+                // 1. Reset
                 currentBusConfigs.forEach(bus => {
                     if(!bus.passengers) bus.passengers = new Array(bus.kapasitas).fill(null);
                     for(let i=0; i<bus.kapasitas; i++) {
@@ -3411,21 +3496,19 @@
                     }
                 });
 
-                // 2. Sort siswa berdasarkan kelas agar bergerombol
+                // 2. Sort siswa
                 pendingPlotSiswa.sort((a,b) => a.class.localeCompare(b.class));
 
-                // 3. Plot Guru di depan (Maks 2 per bus agar merata)
+                // 3. Plot Guru di depan (Maks 2 per bus)
                 currentBusConfigs.forEach(bus => {
-                    let seatIdx = 0;
-                    let guruCount = 0;
+                    let seatIdx = 0; let guruCount = 0;
                     while(pendingPlotGuru.length > 0 && seatIdx < bus.kapasitas && guruCount < 2) {
-                        bus.passengers[seatIdx] = pendingPlotGuru.shift();
-                        seatIdx++;
+                        bus.passengers[seatIdx++] = pendingPlotGuru.shift();
                         guruCount++;
                     }
                 });
                 
-                // Jika masih ada sisa guru, paksa masuk ke kursi kosong terdepan
+                // Sisa guru paksa masuk kursi kosong terdepan
                 currentBusConfigs.forEach(bus => {
                     for(let i=0; i<bus.kapasitas; i++) {
                         if(!bus.passengers[i] && pendingPlotGuru.length > 0) {
@@ -3434,7 +3517,7 @@
                     }
                 });
 
-                // 4. Plot Siswa (Dengan aturan 1-5 bangku sisa)
+                // 4. Plot Siswa (Algoritma sebar rombel)
                 currentBusConfigs.forEach(bus => {
                     let lastClassInBus = null;
                     for(let i=0; i<bus.kapasitas; i++) {
@@ -3444,9 +3527,8 @@
                         let nextSiswa = pendingPlotSiswa[0];
                         let sisaKursi = bus.kapasitas - i;
 
-                        // ATURAN: Jika kelas berganti dan sisa kursi <= 5, kosongkan kursi sisanya!
                         if (lastClassInBus && lastClassInBus !== nextSiswa.class && sisaKursi <= 5) {
-                            break; // Lanjut ke bus berikutnya
+                            break; 
                         }
 
                         bus.passengers[i] = pendingPlotSiswa.shift();
@@ -3458,7 +3540,7 @@
                 renderVisualDenahBus();
                 showToast("Selesai! Peserta di-plot otomatis sesuai rombel kelas.", "success");
                 
-                if(btn) { btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Plot Semua`; btn.disabled = false; }
+                if(btn) { btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Isi Kursi Otomatis`; btn.disabled = false; }
         }, 600);
     }
 
