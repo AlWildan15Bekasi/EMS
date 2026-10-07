@@ -1843,7 +1843,6 @@
             document.getElementById('stat-bus').innerText = MOCK_BUS.length;
             document.getElementById('stat-planning').innerText = MY_PLANNING.length;
 
-            // Render Global Agenda & Planning (KODE SAMA SEPERTI SEBELUMNYA)
             const globalContainer = document.getElementById('dashboard-global-agenda');
             let globalHtml = '';
             const upcoming = GLOBAL_EVENTS.sort((a,b) => new Date(a.start) - new Date(b.start)).slice(0, 5);
@@ -1892,7 +1891,7 @@
                             <div class="flex flex-wrap gap-2 mb-5">${tags}</div>
                             <div class="mt-auto pt-4 border-t border-slate-100 flex gap-2">
                                 <button onclick="openManifestModal(${plan.id})" class="flex-1 py-3 bg-aw-navy hover:bg-blue-800 text-white font-bold rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 text-[10.5px] sm:text-xs uppercase tracking-wider">
-                                    <i class="fa-solid fa-clipboard-user text-base"></i> Atur Kursi & Absen
+                                    <i class="fa-solid fa-clipboard-user text-base"></i> Plotting & Absen
                                 </button>
                                 <button onclick="markEventSelesai(${plan.id})" class="w-12 sm:w-14 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 hover:border-emerald-500 rounded-xl shadow-sm transition-colors flex justify-center items-center group" title="Tandai Acara Selesai">
                                     <i class="fa-solid fa-check text-xl group-hover:scale-110 transition-transform"></i>
@@ -3999,25 +3998,35 @@ function renderAbsensiList() {
             if(!h) return;
             
             document.getElementById('rev-hist-id').value = historyId;
-            document.getElementById('review-loc-name').innerText = h.extendedProps.loc;
+            document.getElementById('review-loc-name').innerText = `${h.title} • ${h.extendedProps.loc}`;
 
-            // Logika Estimasi Awal (Bisa diedit manual oleh user)
             const bus = MOCK_BUS.find(b => b.id === h.extendedProps.busVendorId);
             const cat = MOCK_CATERING.find(c => c.id === h.extendedProps.catVendorId);
+            const loc = MOCK_LOCATIONS.find(l => l.id === h.extendedProps.locId);
             
-            document.getElementById('rep-inp-tiket').value = ''; 
+            // Ekstrak angka otomatis dari estimasi harga tiket lokasi jika ada
+            let estTiket = '';
+            if (loc && loc.price) {
+                let digits = loc.price.replace(/[^0-9]/g, '');
+                if (digits) estTiket = parseInt(digits);
+            }
+
+            document.getElementById('rep-inp-tiket').value = estTiket; 
             document.getElementById('rep-inp-konsumsi').value = cat ? cat.price : '';
             document.getElementById('rep-inp-transport').value = bus ? bus.price : '';
             
+            const notaInp = document.getElementById('rep-inp-nota');
+            if(notaInp) notaInp.value = '';
+
             document.getElementById('rev-bus-text').value = '';
             document.getElementById('rev-food-text').value = '';
             document.getElementById('rev-loc-text').value = '';
-            document.querySelectorAll('input[type="radio"]').forEach(s => s.checked = false);
+            document.querySelectorAll('#review-modal input[type="radio"]').forEach(s => s.checked = false);
             
             openModal('review-modal');
         }
 
-        async function submitReview(e) {
+       async function submitReview(e) {
             e.preventDefault();
             const histId = parseInt(document.getElementById('rev-hist-id').value);
             const rateBus = document.querySelector('input[name="rating_bus"]:checked');
@@ -4030,7 +4039,19 @@ function renderAbsensiList() {
             btn.innerHTML = `<div class="loader-spin mx-auto"></div>`; btn.disabled = true;
 
             try {
-                // Bungkus semua data form review jadi 1 JSON
+                // 1. Cek dan Upload File Bukti Nota ke Supabase Storage jika ada
+                let notaUrl = null;
+                const notaInp = document.getElementById('rep-inp-nota');
+                if (notaInp && notaInp.files && notaInp.files.length > 0) {
+                    showToast("Mengunggah bukti bayar / nota...", "info");
+                    notaUrl = await uploadImageToSupabase(notaInp.files[0]);
+                }
+
+                // 2. Hitung & kunci statistik kehadiran riil dari E-Absensi saat laporan dibuat
+                const ev = MY_HISTORY.find(h => h.id === histId);
+                const attStats = ev ? calculateRealAttendance(ev) : { totalPax: 0, hadirCount: 0, makanCount: 0, attPct: 100, absentList: 'Nihil', busCount: 0 };
+
+                // 3. Bungkus semua data form review + absensi + URL nota jadi 1 JSON
                 const payloadReview = {
                     costTicket: parseInt(document.getElementById('rep-inp-tiket').value) || 0,
                     costFood: parseInt(document.getElementById('rep-inp-konsumsi').value) || 0,
@@ -4041,9 +4062,10 @@ function renderAbsensiList() {
                     reviewBusText: document.getElementById('rev-bus-text').value,
                     reviewFoodText: document.getElementById('rev-food-text').value,
                     reviewLocText: document.getElementById('rev-loc-text').value,
+                    notaUrl: notaUrl,
+                    snapshotAtt: attStats
                 };
 
-                // Tembak Database! Set is_reviewed = true dan simpan json laporannya
                 const { error } = await supabaseApp.from('events').update({ 
                     is_reviewed: true, 
                     laporan_evaluasi: payloadReview 
@@ -4051,35 +4073,36 @@ function renderAbsensiList() {
                 
                 if(error) throw error;
 
-                showToast("Laporan operasional & finansial berhasil disimpan permanen ke Arsip Pusat!", "success");
+                showToast("Laporan operasional & finansial berhasil disimpan ke Database!", "success");
                 closeModal('review-modal');
-                
-                // Reload dashboard biar narik data asli
-                initDashboard(); 
+                await initDashboard(); 
             } catch (err) {
                 console.error(err);
                 showToast("Gagal mengirim laporan ke Database.", "error");
             } finally {
-                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Kirim Laporan & Evaluasi`; 
+                btn.innerHTML = `Kirim Laporan & Evaluasi`; 
                 btn.disabled = false;
             }
         }
-
+        
         function openReportModal(reportId) {
             const ev = MY_HISTORY.find(r => r.id === reportId);
             if(!ev || !ev.extendedProps.laporan_evaluasi) return;
             
+            activeReportEventId = reportId;
             const rep = ev.extendedProps.laporan_evaluasi;
             const formatMoney = (amount) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
             
-            // Tarik data real pax & unit bus dari database event
-            const actualPax = ev.extendedProps.pax;
-            const actualBus = ev.extendedProps.busUnit;
+            // Hitung real-time dari data E-Absensi & Konfigurasi Bus terbaru
+            const stats = calculateRealAttendance(ev);
             
-            const totalTicket = rep.costTicket * actualPax; 
-            const totalFood = rep.costFood * actualPax; 
-            const totalTrans = rep.costTrans * actualBus;
+            // KALKULASI FINANSIAL BERBASIS E-ABSENSI RIIL:
+            // Tiket dikali jumlah yang HADIR, Konsumsi dikali jumlah yang MAKAN, Transport dikali jumlah BUS
+            const totalTicket = rep.costTicket * stats.hadirCount; 
+            const totalFood = rep.costFood * stats.makanCount; 
+            const totalTrans = rep.costTrans * stats.busCount;
             const grandTotal = totalTicket + totalFood + totalTrans;
+
             const genStars = (rate) => { let s=''; for(let i=0; i<5; i++){s+=`<i class="fa-solid fa-star ${i<rate?'text-aw-yellow':'text-slate-200'}"></i>`;} return s; };
 
             document.getElementById('rep-tag').innerText = ev.type;
@@ -4087,19 +4110,36 @@ function renderAbsensiList() {
             document.getElementById('rep-loc').innerHTML = `<i class="fa-solid fa-location-dot"></i> ${ev.extendedProps.loc}`;
             document.getElementById('rep-date').innerHTML = `<i class="fa-regular fa-calendar-check"></i> ${ev.start}`;
             
-            // Kita akan buat kalkulasi E-Absensi otomatis di next update, sementara statis 100%
-            document.getElementById('rep-att-pct').innerText = `100%`;
-            document.getElementById('rep-att-bar').style.width = `100%`;
-            document.getElementById('rep-absent').innerText = 'Data e-Absensi belum dikalkulasi.';
+            document.getElementById('rep-att-pct').innerText = `${stats.attPct}% (${stats.hadirCount}/${stats.totalPax} Pax)`;
+            document.getElementById('rep-att-bar').style.width = `${stats.attPct}%`;
+            document.getElementById('rep-absent').innerText = stats.absentList;
             
-            document.getElementById('rep-bus-count').innerText = `${actualBus} Unit`;
-            document.getElementById('rep-cost-ticket').innerText = formatMoney(totalTicket);
-            document.getElementById('rep-cost-food').innerText = formatMoney(totalFood);
-            document.getElementById('rep-cost-trans').innerText = formatMoney(totalTrans);
+            document.getElementById('rep-bus-count').innerText = `${stats.busCount} Unit`;
+            document.getElementById('rep-cost-ticket').innerText = `${formatMoney(totalTicket)} (${stats.hadirCount} Hadir × ${formatMoney(rep.costTicket)})`;
+            document.getElementById('rep-cost-food').innerText = `${formatMoney(totalFood)} (${stats.makanCount} Makan × ${formatMoney(rep.costFood)})`;
+            document.getElementById('rep-cost-trans').innerText = `${formatMoney(totalTrans)} (${stats.busCount} Bus × ${formatMoney(rep.costTrans)})`;
             document.getElementById('rep-cost-total').innerText = formatMoney(grandTotal);
+            
             document.getElementById('rep-rate-bus').innerHTML = genStars(rep.ratingBus);
             document.getElementById('rep-rate-food').innerHTML = genStars(rep.ratingFood);
             document.getElementById('rep-rate-trans').innerHTML = genStars(rep.ratingTrans);
+
+            // Atur tombol lihat lampiran nota
+            const btnNota = document.getElementById('rep-btn-lihat-nota');
+            const statusNota = document.getElementById('rep-nota-status');
+            if (btnNota && statusNota) {
+                if (rep.notaUrl) {
+                    btnNota.href = rep.notaUrl;
+                    btnNota.classList.remove('pointer-events-none', 'opacity-50');
+                    btnNota.innerText = 'Lihat Foto Nota';
+                    statusNota.innerText = 'Bukti transaksi tersimpan di server.';
+                } else {
+                    btnNota.href = '#';
+                    btnNota.classList.add('pointer-events-none', 'opacity-50');
+                    btnNota.innerText = 'Tidak Ada Lampiran';
+                    statusNota.innerText = 'Belum ada bukti nota yang diunggah.';
+                }
+            }
 
             openModal('report-modal');
         }
