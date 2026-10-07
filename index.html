@@ -3613,20 +3613,18 @@ function renderAbsensiList() {
             }
         }
 
-        // ==========================================
+       // ==========================================
         // MESIN RAKIT PDF A4 ELEGAN (STRATEGI MEMORI VIRTUAL)
         // ==========================================
         function printA4PDF(title, htmlContent, isLandscape = false) {
             // KITA GABUNGKAN SEMUA JADI SATU STRING HTML MURNI
-            // Tanpa menyentuh document.body web sama sekali!
             const finalHtml = `
                 <div style="width: ${isLandscape ? '1050px' : '750px'}; padding: 30px; background-color: #ffffff; color: #000000; font-family: sans-serif;">
-                    <div style="border-bottom: 2px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
-                        <img src="https://i.ibb.co.com/jvJhWqgK/Screenshot-2026-09-28-115354.png" style="width: 50px; height: 50px; object-fit: contain;">
-                        <div>
-                            <h2 style="margin: 0; font-size: 22px; color: #1e3a8a; font-weight: 900; text-transform: uppercase;">${title.replace(/_/g, ' ')}</h2>
-                            <p style="margin: 4px 0 0 0; font-size: 11px; color: #64748b;">Al Wildan Islamic School - Dokumen Internal Sistem Event</p>
-                        </div>
+                    <!-- KOP SURAT CENTERED -->
+                    <div style="border-bottom: 2px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; text-align: center;">
+                        <img src="https://i.ibb.co.com/jvJhWqgK/Screenshot-2026-09-28-115354.png" style="width: 60px; height: 60px; object-fit: contain; margin-bottom: 10px; display: inline-block;">
+                        <h2 style="margin: 0; font-size: 22px; color: #1e3a8a; font-weight: 900; text-transform: uppercase;">${title.replace(/_/g, ' ')}</h2>
+                        <p style="margin: 4px 0 0 0; font-size: 11px; color: #64748b;">Al Wildan Islamic School - Dokumen Internal Sistem Event</p>
                     </div>
                     <div>${htmlContent}</div>
                     <div style="margin-top: 40px; border-top: 1px dashed #cbd5e1; padding-top: 10px; font-size: 10px; color: #94a3b8; text-align: right;">
@@ -3656,8 +3654,10 @@ function renderAbsensiList() {
 
         function downloadPDFManifest() {
             if (!currentBusConfigs || currentBusConfigs.length === 0) return showToast("Tidak ada data armada.", "error");
-            let content = `<p style="font-size: 13px; color: #334155; margin-bottom: 20px; line-height: 1.5;"><strong>Detail Kegiatan:</strong><br>Event: ${activeEventManifest.title}<br>Lokasi Tujuan: ${activeEventManifest.extendedProps.loc}<br>Tanggal Keberangkatan: ${activeEventManifest.start}</p>`;
-            let gridHtml = `<div style="display:flex; flex-wrap:wrap; gap:20px;">`;
+            let content = `<p style="font-size: 13px; color: #334155; margin-bottom: 25px; line-height: 1.5; text-align: center;"><strong>Detail Kegiatan:</strong><br>Event: ${activeEventManifest.title}<br>Lokasi Tujuan: ${activeEventManifest.extendedProps.loc}<br>Tanggal Keberangkatan: ${activeEventManifest.start}</p>`;
+            
+            // Flex direction diubah jadi column agar turun ke bawah (cocok untuk portrait)
+            let gridHtml = `<div style="display:flex; flex-direction:column; gap:20px;">`;
             
             currentBusConfigs.forEach(bus => {
                 let seats = '';
@@ -3669,18 +3669,20 @@ function renderAbsensiList() {
                     </div>`;
                 });
                 gridHtml += `
-                <div style="width: 48%; border: 1px solid #94a3b8; border-radius: 8px; padding: 12px; box-sizing: border-box;">
+                <div style="width: 100%; border: 1px solid #94a3b8; border-radius: 8px; padding: 12px; box-sizing: border-box;">
                     <h4 style="margin:0 0 10px 0; color:#1e3a8a; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">${bus.nama} (${bus.gender}) <span style="font-size:10px; color:#64748b; font-weight:normal; float:right;">Kapasitas: ${bus.kapasitas} Seat</span></h4>
                     <div style="display:flex; flex-wrap:wrap; gap: 8px;">${seats}</div>
                 </div>`;
             });
             content += gridHtml + `</div>`;
-            printA4PDF(`Manifest_Armada_Bus_${activeEventManifest.title.replace(/\s+/g, '_')}`, content, true);
+            
+            // Parameter terakhir diubah jadi false agar kertas menjadi PORTRAIT
+            printA4PDF(`Manifest_Armada_Bus_${activeEventManifest.title.replace(/\s+/g, '_')}`, content, false);
         }
 
         function downloadPDFAbsensi() {
             if (!currentBusConfigs || currentBusConfigs.length === 0) return showToast("Tidak ada data absensi.", "error");
-            let content = `<p style="font-size: 13px; color: #334155; margin-bottom: 20px; line-height: 1.5;"><strong>Rekap Kehadiran Lapangan:</strong><br>Event: ${activeEventManifest.title}<br>Lokasi: ${activeEventManifest.extendedProps.loc}</p>`;
+            let content = `<p style="font-size: 13px; color: #334155; margin-bottom: 25px; line-height: 1.5; text-align: center;"><strong>Rekap Kehadiran Lapangan:</strong><br>Event: ${activeEventManifest.title}<br>Lokasi: ${activeEventManifest.extendedProps.loc}</p>`;
             
             currentBusConfigs.forEach(bus => {
                 let trs = ''; let total = 0; let hadir = 0; let makan = 0;
