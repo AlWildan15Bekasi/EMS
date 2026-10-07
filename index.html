@@ -3698,68 +3698,180 @@ function renderAbsensiList() {
         }
 
        // ==========================================
-        // MESIN RAKIT PDF A4 ELEGAN (STRATEGI MEMORI VIRTUAL)
+        // MESIN RAKIT PDF A4 ELEGAN (ANTI PAGE-BREAK & IDENTIK FRONTEND)
         // ==========================================
         function printA4PDF(title, htmlContent, isLandscape = false) {
             const finalHtml = `
-                <div style="width: ${isLandscape ? '1050px' : '750px'}; padding: 40px; background-color: #ffffff; color: #000000; font-family: sans-serif; position: relative;">
+                <div style="width: ${isLandscape ? '1020px' : '720px'}; padding: 25px 30px; background-color: #ffffff; color: #000000; font-family: 'Inter', sans-serif; position: relative; box-sizing: border-box;">
                     <!-- TANGGAL CETAK DI KANAN ATAS (Aman dari potongan) -->
-                    <div style="position: absolute; top: 40px; right: 40px; font-size: 10px; color: #94a3b8; text-align: right;">
-                        Tanggal Cetak:<br><strong style="color: #64748b;">${new Date().toLocaleString('id-ID')}</strong>
+                    <div style="position: absolute; top: 25px; right: 30px; font-size: 9px; color: #64748b; text-align: right; line-height: 1.4;">
+                        Dicetak pada:<br><strong style="color: #334155;">${new Date().toLocaleString('id-ID')}</strong>
                     </div>
                     
                     <!-- KOP SURAT CENTERED -->
-                    <div style="border-bottom: 2px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 25px; text-align: center;">
-                        <img src="https://i.ibb.co.com/jvJhWqgK/Screenshot-2026-09-28-115354.png" style="width: 60px; height: 60px; object-fit: contain; margin-bottom: 10px; display: inline-block;">
-                        <h2 style="margin: 0; font-size: 22px; color: #1e3a8a; font-weight: 900; text-transform: uppercase;">${title.replace(/_/g, ' ')}</h2>
-                        <p style="margin: 4px 0 0 0; font-size: 11px; color: #64748b; font-weight: bold;">Al Wildan Islamic School - Dokumen Internal Sistem Event</p>
+                    <div style="border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 20px; text-align: center;">
+                        <img src="https://i.ibb.co.com/jvJhWqgK/Screenshot-2026-09-28-115354.png" style="width: 55px; height: 55px; object-fit: contain; margin-bottom: 6px; display: inline-block;">
+                        <h2 style="margin: 0; font-size: 20px; color: #1e3a8a; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">${title.replace(/_/g, ' ')}</h2>
+                        <p style="margin: 3px 0 0 0; font-size: 11px; color: #64748b; font-weight: bold;">Al Wildan Islamic School - Dokumen Internal Sistem Event</p>
                     </div>
                     <div>${htmlContent}</div>
                 </div>
             `;
 
             const opt = {
-                margin: 0.3, 
+                margin: [0.3, 0.2, 0.3, 0.2], 
                 filename: `${title}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true, logging: false },
-                jsPDF: { unit: 'in', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait' }
+                jsPDF: { unit: 'in', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait' },
+                // KUNCI UTAMA AGAR TIDAK KEPOTONG DI TENGAH KOTAK BUS:
+                pagebreak: { mode: ['css', 'legacy'], avoid: ['.pdf-bus-card', 'tr'] }
             };
             
             showToast("Memproses PDF A4... Mohon tunggu sebentar", "info");
-            html2pdf().set(opt).from(finalHtml).save().then(() => showToast("PDF berhasil diunduh!", "success")).catch(err => {
-                console.error("Gagal mencetak PDF:", err); showToast("Terjadi kesalahan saat membuat PDF.", "error");
+            html2pdf().set(opt).from(finalHtml).save().then(() => {
+                showToast("PDF berhasil diunduh!", "success");
+            }).catch(err => {
+                console.error("Gagal mencetak PDF:", err); 
+                showToast("Terjadi kesalahan saat membuat PDF.", "error");
             });
+        }
+
+        // Helper khusus merakit 1 kotak kursi di dalam PDF
+        function generatePDFSeatBox(p, seatNumber) {
+            let isFilled = p !== null && p !== undefined;
+            let isGuru = isFilled && p.type === 'Guru';
+            
+            let bgColor = isFilled ? (isGuru ? '#fef3c7' : '#eff6ff') : '#ffffff';
+            let borderColor = isFilled ? (isGuru ? '#fcd34d' : '#bfdbfe') : '#cbd5e1';
+            let textColor = isFilled ? (isGuru ? '#92400e' : '#1e3a8a') : '#94a3b8';
+            let subColor = isFilled ? (isGuru ? '#d97706' : '#3b82f6') : '#cbd5e1';
+
+            let nameDisplay = isFilled ? p.name : '-';
+            // Potong nama jika terlalu panjang agar kotak PDF tetap simetris
+            if (nameDisplay.length > 18) nameDisplay = nameDisplay.substring(0, 16) + '..';
+            let roleDisplay = isFilled ? (isGuru ? 'GURU' : p.class) : 'KOSONG';
+
+            return `
+                <div style="flex: 1; height: 36px; background-color: ${bgColor}; border: 1px solid ${borderColor}; border-radius: 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px 3px; box-sizing: border-box; overflow: hidden; text-align: center;">
+                    <div style="font-size: 8.5px; font-weight: 800; color: ${textColor}; line-height: 1.1; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <span style="opacity: 0.6; font-weight: 700;">${seatNumber}.</span> ${nameDisplay}
+                    </div>
+                    <div style="font-size: 7px; font-weight: 700; color: ${subColor}; text-transform: uppercase; margin-top: 2px; line-height: 1;">
+                        ${roleDisplay}
+                    </div>
+                </div>
+            `;
         }
 
         function downloadPDFManifest() {
             if (!currentBusConfigs || currentBusConfigs.length === 0) return showToast("Tidak ada data armada.", "error");
-            let content = `<p style="font-size: 13px; color: #334155; margin-bottom: 25px; line-height: 1.5; text-align: center;"><strong>Detail Kegiatan:</strong><br>Event: ${activeEventManifest.title}<br>Lokasi Tujuan: ${activeEventManifest.extendedProps.loc}<br>Tanggal Keberangkatan: ${activeEventManifest.start}</p>`;
-            let gridHtml = `<div style="display:flex; flex-direction:column; gap:20px;">`;
+            
+            let content = `
+                <div style="text-align: center; margin-bottom: 18px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <p style="font-size: 11px; color: #334155; margin: 0; line-height: 1.5;">
+                        <strong>Event:</strong> ${activeEventManifest.title} &nbsp;|&nbsp; 
+                        <strong>Lokasi:</strong> ${activeEventManifest.extendedProps.loc} &nbsp;|&nbsp; 
+                        <strong>Tanggal:</strong> ${activeEventManifest.start}
+                    </p>
+                </div>
+            `;
+            
+            let gridHtml = `<div style="display: flex; flex-direction: column; gap: 20px; align-items: center;">`;
             
             currentBusConfigs.forEach(bus => {
-                let seats = '';
-                bus.passengers.forEach((p, i) => {
-                    let name = p ? p.name : '-';
-                    let type = p ? (p.type === 'Guru' ? 'GURU' : p.class) : 'KOSONG';
-                    seats += `<div style="border: 1px solid #cbd5e1; padding: 6px; font-size: 9px; border-radius: 4px; text-align: center; background: ${p ? '#f8fafc' : '#ffffff'}; width: calc(25% - 6px); box-sizing: border-box;">
-                        <strong>${i+1}</strong>. <span style="font-size:10px;">${name}</span><br><span style="color:#64748b; font-size: 8px;">${type}</span>
-                    </div>`;
-                });
+                const is22 = bus.layout === '2-2';
+                
+                // --- LOGIKA SAMA PERSIS DENGAN FRONTEND (GANJIL=5, GENAP=6, PINTU KIRI) ---
+                let L = bus.kapasitas % 2 !== 0 ? 5 : 6; 
+                let R = is22 ? 4 : 5; 
+                let doorSeats = R - 2; 
+                let normalSeatCount = bus.kapasitas - L - doorSeats;
+                
+                let rowsHtml = '';
+                let seatIndex = 0;
+
+                // 1. Baris Normal (Depan sampai sebelum pintu)
+                while (normalSeatCount > 0) {
+                    let seatsInThisRow = Math.min(R, normalSeatCount);
+                    rowsHtml += `<div style="display: flex; gap: 6px; width: 100%; margin-bottom: 5px; align-items: center;">`;
+                    for (let c = 0; c < R; c++) {
+                        if (c === 2) rowsHtml += `<div style="width: 22px; flex-shrink: 0;"></div>`; // Lorong tengah
+                        if (c < seatsInThisRow) {
+                            let p = bus.passengers ? bus.passengers[seatIndex] : null;
+                            rowsHtml += generatePDFSeatBox(p, seatIndex + 1);
+                            seatIndex++;
+                        } else {
+                            rowsHtml += `<div style="flex: 1;"></div>`; // Ruang kosong sisa
+                        }
+                    }
+                    rowsHtml += `</div>`;
+                    normalSeatCount -= seatsInThisRow;
+                }
+
+                // 2. Baris Pintu (Kedua dari belakang, 2 kursi kiri jadi area Pintu)
+                rowsHtml += `<div style="display: flex; gap: 6px; width: 100%; margin-bottom: 5px; align-items: center;">`;
+                rowsHtml += `
+                    <div style="flex: 1; height: 36px; border: 1px dashed #94a3b8; border-radius: 5px; background-color: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; box-sizing: border-box;">
+                        PINTU
+                    </div>
+                    <div style="flex: 1; height: 36px; border: 1px dashed #cbd5e1; border-radius: 5px; background-color: #f8fafc; box-sizing: border-box;"></div>
+                `;
+                rowsHtml += `<div style="width: 22px; flex-shrink: 0;"></div>`; // Lorong tengah
+                for (let c = 0; c < doorSeats; c++) {
+                    let p = bus.passengers ? bus.passengers[seatIndex] : null;
+                    rowsHtml += generatePDFSeatBox(p, seatIndex + 1);
+                    seatIndex++;
+                }
+                rowsHtml += `</div>`;
+
+                // 3. Baris Paling Belakang (Full 5 atau 6 tanpa lorong tengah)
+                rowsHtml += `<div style="display: flex; gap: 5px; width: 100%; margin-top: 2px; align-items: center;">`;
+                for (let c = 0; c < L; c++) {
+                    let p = bus.passengers ? bus.passengers[seatIndex] : null;
+                    rowsHtml += generatePDFSeatBox(p, seatIndex + 1);
+                    seatIndex++;
+                }
+                rowsHtml += `</div>`;
+
+                let badgeColor = bus.gender === 'Ikhwan' ? '#38bdf8' : (bus.gender === 'Akhwat' ? '#fb7185' : '#cbd5e1');
+
+                // BUNGKUS DALAM .pdf-bus-card DENGAN page-break-inside: avoid AGAR ANTI KEPOTONG
                 gridHtml += `
-                <div style="width: 100%; border: 1px solid #94a3b8; border-radius: 8px; padding: 12px; box-sizing: border-box;">
-                    <h4 style="margin:0 0 10px 0; color:#1e3a8a; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">${bus.nama} (${bus.gender}) <span style="font-size:10px; color:#64748b; font-weight:normal; float:right;">Kapasitas: ${bus.kapasitas} Seat</span></h4>
-                    <div style="display:flex; flex-wrap:wrap; gap: 8px;">${seats}</div>
+                <div class="pdf-bus-card" style="width: 100%; max-width: 520px; border: 2px solid #94a3b8; border-radius: 18px 18px 10px 10px; overflow: hidden; background-color: #f8fafc; page-break-inside: avoid; break-inside: avoid; margin-bottom: 10px; box-sizing: border-box;">
+                    <!-- Area Dashboard Kernet & Driver -->
+                    <div style="background-color: #e2e8f0; border-bottom: 2px solid #cbd5e1; padding: 8px 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; background: #cbd5e1; padding: 3px 8px; border-radius: 4px;">KERNET</div>
+                        <div style="font-size: 8px; font-weight: 700; color: #94a3b8; letter-spacing: 2px;">▲ DEPAN ▲</div>
+                        <div style="font-size: 8px; font-weight: 900; color: #ffffff; text-transform: uppercase; background: #334155; padding: 3px 10px; border-radius: 12px;">DRIVER</div>
+                    </div>
+                    <!-- Header Nama Bus -->
+                    <div style="background-color: #1e293b; color: #ffffff; padding: 6px 12px; text-align: center; border-bottom: 2px solid #0f172a;">
+                        <h4 style="margin: 0; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">${bus.nama}</h4>
+                        <span style="font-size: 9px; color: ${badgeColor}; font-weight: 700;">${bus.gender} • ${bus.kapasitas} Kursi (Layout ${bus.layout})</span>
+                    </div>
+                    <!-- Isi Kursi -->
+                    <div style="padding: 12px;">
+                        ${rowsHtml}
+                    </div>
                 </div>`;
             });
-            content += gridHtml + `</div>`;
             
-            // Ganti Nama PDF jadi PLOTTING ARMADA BUS
+            content += gridHtml + `</div>`;
             printA4PDF(`PLOTTING_ARMADA_BUS_${activeEventManifest.title.replace(/\s+/g, '_')}`, content, false);
         }
+
         function downloadPDFAbsensi() {
             if (!currentBusConfigs || currentBusConfigs.length === 0) return showToast("Tidak ada data absensi.", "error");
-            let content = `<p style="font-size: 13px; color: #334155; margin-bottom: 25px; line-height: 1.5; text-align: center;"><strong>Rekap Kehadiran Lapangan:</strong><br>Event: ${activeEventManifest.title}<br>Lokasi: ${activeEventManifest.extendedProps.loc}</p>`;
+            let content = `
+                <div style="text-align: center; margin-bottom: 18px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <p style="font-size: 11px; color: #334155; margin: 0; line-height: 1.5;">
+                        <strong>Rekap Kehadiran Lapangan</strong> &nbsp;|&nbsp; 
+                        <strong>Event:</strong> ${activeEventManifest.title} &nbsp;|&nbsp; 
+                        <strong>Lokasi:</strong> ${activeEventManifest.extendedProps.loc}
+                    </p>
+                </div>
+            `;
             
             currentBusConfigs.forEach(bus => {
                 let trs = ''; let total = 0; let hadir = 0; let makan = 0;
@@ -3769,35 +3881,35 @@ function renderAbsensiList() {
                             total++; let isHadir = p.hadir !== false; let isMakan = p.makan !== false;
                             if(isHadir) hadir++; if(isMakan) makan++;
                             trs += `
-                                <tr style="border-bottom: 1px solid #e2e8f0;">
-                                    <td style="padding: 6px; font-size: 11px; text-align: center;">${total}</td>
-                                    <td style="padding: 6px; font-size: 11px; font-weight: bold;">${p.name} <span style="font-size:9px; color:#64748b; font-weight:normal;">(${p.type==='Guru'?'Guru':p.class})</span></td>
-                                    <td style="padding: 6px; font-size: 11px; text-align: center; color: ${isHadir ? '#10b981' : '#ef4444'}">${isHadir ? 'Hadir' : 'Alfa'}</td>
-                                    <td style="padding: 6px; font-size: 11px; text-align: center; color: ${isMakan ? '#10b981' : '#ef4444'}">${isMakan ? 'Sudah Makan' : 'Belum Makan'}</td>
+                                <tr style="border-bottom: 1px solid #e2e8f0; page-break-inside: avoid; break-inside: avoid;">
+                                    <td style="padding: 6px; font-size: 10px; text-align: center;">${total}</td>
+                                    <td style="padding: 6px; font-size: 10px; font-weight: bold;">${p.name} <span style="font-size:8.5px; color:#64748b; font-weight:normal;">(${p.type==='Guru'?'Guru':p.class})</span></td>
+                                    <td style="padding: 6px; font-size: 10px; text-align: center; font-weight: bold; color: ${isHadir ? '#10b981' : '#ef4444'}">${isHadir ? 'Hadir' : 'Alfa'}</td>
+                                    <td style="padding: 6px; font-size: 10px; text-align: center; font-weight: bold; color: ${isMakan ? '#10b981' : '#ef4444'}">${isMakan ? 'Sudah' : 'Belum'}</td>
                                     <td style="padding: 6px; border-left:1px dashed #cbd5e1;"></td>
                                 </tr>`;
                         }
                     });
                 }
                 content += `
-                    <div style="margin-bottom: 25px;">
-                        <h4 style="margin:0 0 5px 0; font-size: 14px; color: #1e3a8a; background-color:#f1f5f9; padding:6px; border-radius:4px;">${bus.nama}</h4>
-                        <p style="margin: 0 0 10px 0; font-size: 11px; color: #64748b;">Statistik: Hadir (${hadir}/${total}) | Konsumsi (${makan}/${total})</p>
+                    <div class="pdf-bus-card" style="margin-bottom: 25px; page-break-inside: avoid; break-inside: avoid;">
+                        <h4 style="margin:0 0 5px 0; font-size: 13px; color: #1e3a8a; background-color:#f1f5f9; padding:6px 10px; border-radius:4px;">${bus.nama} (${bus.gender})</h4>
+                        <p style="margin: 0 0 8px 0; font-size: 10px; color: #64748b;">Statistik: Hadir (${hadir}/${total}) | Konsumsi (${makan}/${total})</p>
                         <table style="width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1;">
-                            <thead style="background-color: #f8fafc; border-bottom: 2px solid #cbd5e1; font-size: 10px; color: #475569; text-transform: uppercase;">
+                            <thead style="background-color: #f8fafc; border-bottom: 2px solid #cbd5e1; font-size: 9px; color: #475569; text-transform: uppercase;">
                                 <tr>
-                                    <th style="padding: 8px; border-right:1px solid #e2e8f0;">No</th>
-                                    <th style="padding: 8px; text-align:left; border-right:1px solid #e2e8f0;">Nama Penumpang</th>
-                                    <th style="padding: 8px; border-right:1px solid #e2e8f0;">Kehadiran</th>
-                                    <th style="padding: 8px; border-right:1px solid #e2e8f0;">Konsumsi</th>
-                                    <th style="padding: 8px; width:80px;">Tanda Tangan</th>
+                                    <th style="padding: 6px; border-right:1px solid #e2e8f0; width: 30px;">No</th>
+                                    <th style="padding: 6px; text-align:left; border-right:1px solid #e2e8f0;">Nama Penumpang</th>
+                                    <th style="padding: 6px; border-right:1px solid #e2e8f0; width: 70px;">Kehadiran</th>
+                                    <th style="padding: 6px; border-right:1px solid #e2e8f0; width: 70px;">Konsumsi</th>
+                                    <th style="padding: 6px; width:80px;">Paraf</th>
                                 </tr>
                             </thead>
                             <tbody>${trs}</tbody>
                         </table>
                     </div>`;
             });
-            printA4PDF(`Rekap_Absensi_${activeEventManifest.title.replace(/\s+/g, '_')}`, content, false);
+            printA4PDF(`REKAP_ABSENSI_${activeEventManifest.title.replace(/\s+/g, '_')}`, content, false);
         }
         
         // ==========================================
